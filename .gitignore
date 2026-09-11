@@ -1,0 +1,14 @@
+# Dependencies / dist
+node_modules/
+dist/
+*.zip
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 本地临时文件
+*.tmp
+~$*
