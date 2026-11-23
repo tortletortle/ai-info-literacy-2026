@@ -486,7 +486,7 @@
     var card = makeElement("article","result-card");
     var head = makeElement("div","result-card-head");
     head.appendChild(makeElement("strong","","第 " + (index + 1) + " 题 · AI 证据推理"));
-    head.appendChild(makeElement("span","status-pill status-hit","证据校验通过 · 模型自评 " + (data.confidence || "low")));
+    head.appendChild(makeElement("span","status-pill status-hit","逐项引用齐全 · 模型自评 " + (data.confidence || "low")));
     card.appendChild(head);
 
     var body = makeElement("div","result-body");
