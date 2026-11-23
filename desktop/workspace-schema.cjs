@@ -74,7 +74,10 @@ function validateDocument(document, index) {
   if (!Array.isArray(document.pages) || document.pages.length > MAX_PAGES_PER_DOCUMENT) {
     throw new Error(prefix + "页数组无效或超过数量限制。");
   }
-  const authority = ["A", "B", "C"].includes(document.authority) ? document.authority : "C";
+  const declaredAuthority = ["A", "B", "C"].includes(document.authority) ? document.authority : "C";
+  const sourceConfirmedByUser = document.sourceConfirmedByUser === true ||
+    Boolean(document.source && document.source.confirmedByUser === true);
+  const authority = sourceConfirmedByUser ? declaredAuthority : "C";
   assertHttpsOrEmpty(document.sourceUrl, prefix + "来源链接");
   const seenPages = new Set();
   const pages = document.pages.map((page, pageIndex) => {
@@ -86,7 +89,7 @@ function validateDocument(document, index) {
     seenPages.add(number);
     return { ...page, page: number, text };
   });
-  return { ...document, authority, pages };
+  return { ...document, authority, declaredAuthority, sourceConfirmedByUser, pages };
 }
 
 function normalizeWorkspace(value) {
