@@ -441,7 +441,8 @@
       (parsed.type === "judge" ? [{key:"A",text:"正确"},{key:"B",text:"错误"}] : []);
     if (!options.length) return {status:"unavailable",message:"没有识别到选项，无法逐项核验。"};
 
-    var evidencePayload = evidence.map(function (item,index) {
+    var isDesktop = !!(window.quizMindDesktop && window.quizMindDesktop.answerQuestion);
+    var evidencePayload = (evidence || []).map(function (item,index) {
       return {
         id:"E" + (index + 1),
         title:item.doc.title,
@@ -457,11 +458,12 @@
       var requestPayload = {
         question:parsed.stem,
         type:parsed.type,
-        options:options,
-        evidence:evidencePayload
+        options:options
       };
+      if (!isDesktop) requestPayload.evidence = evidencePayload;
+
       var data;
-      if (window.quizMindDesktop && window.quizMindDesktop.answerQuestion) {
+      if (isDesktop) {
         data = await window.quizMindDesktop.answerQuestion(requestPayload);
       } else {
         var response = await fetch("/api/answer",{
@@ -474,18 +476,25 @@
           var message = data.message || data.error || "答题服务暂不可用。";
           if (response.status === 503 && data.error === "LLM_NOT_CONFIGURED") message = "服务端模型尚未配置。";
           if (response.status === 404) message = "AI 答题 API 尚未部署。";
-          return {status:"unavailable",message:message};
+          return {status:"unavailable",message:message,evidencePayload:evidencePayload};
         }
       }
+      var returnedEvidence = isDesktop && Array.isArray(data.evidencePayload)
+        ? data.evidencePayload
+        : evidencePayload;
       return {
         status:data.status === "answered" ? "answered" : "uncertain",
         data:data,
         options:options,
-        evidencePayload:evidencePayload,
+        evidencePayload:returnedEvidence,
         message:data.explanation || "现有证据不足，系统拒绝输出答案。"
       };
     } catch (error) {
-      return {status:"unavailable",message:error.message || "AI 服务暂不可用。"};
+      return {
+        status:"unavailable",
+        message:error.message || "AI 服务暂不可用。",
+        evidencePayload:evidencePayload
+      };
     }
   }
 
@@ -590,20 +599,22 @@
         continue;
       }
 
-      var evidence = retrieveEvidence(parsed);
-      if (!evidence.length) {
+      var desktopMode = !!(window.quizMindDesktop && window.quizMindDesktop.answerQuestion);
+      var evidence = desktopMode ? [] : retrieveEvidence(parsed);
+      if (!desktopMode && !evidence.length) {
         missCount++;
         results.appendChild(renderMiss(parsed,index,ambiguous ? "发现多个相近题目，无法唯一匹配。" : null,[]));
         continue;
       }
 
       var ai = await callAnswerAPI(parsed,evidence);
+      var usedEvidence = ai.evidencePayload || evidence;
       if (ai.status === "answered") {
         aiAnswerCount++;
-        results.appendChild(renderAIResult(parsed,index,ai,evidence));
+        results.appendChild(renderAIResult(parsed,index,ai,usedEvidence));
       } else {
         missCount++;
-        results.appendChild(renderMiss(parsed,index,null,evidence,ai.message));
+        results.appendChild(renderMiss(parsed,index,null,usedEvidence,ai.message));
       }
     }
 
