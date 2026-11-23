@@ -89,12 +89,17 @@
     return docs.map(function (doc, index) {
       if (!doc || !Array.isArray(doc.pages)) throw new Error("第 " + (index + 1) + " 份资料缺少 pages 数组");
       var source = doc.source && typeof doc.source === "object" ? doc.source : {};
+      var declaredAuthority = source.authority || doc.authority || meta.authority || "C";
+      var sourceConfirmed = doc.sourceConfirmedByUser === true || source.confirmedByUser === true;
+      var validAuthority = ["A","B","C"].indexOf(declaredAuthority) >= 0 ? declaredAuthority : "C";
       return {
         id:String(doc.id || ("DOC-" + (index + 1))),
         title:String(source.title || doc.title || meta.name || "未命名资料"),
         sourceId:String(source.id || doc.sourceId || meta.sourceId || ""),
-        authority:["A","B","C"].indexOf(source.authority || doc.authority || meta.authority) >= 0 ? (source.authority || doc.authority || meta.authority) : "C",
+        authority:sourceConfirmed ? validAuthority : "C",
+        declaredAuthority:validAuthority,
         sourceUrl:String(source.url || doc.sourceUrl || meta.sourceUrl || ""),
+        sourceConfirmedByUser:sourceConfirmed,
         revision:String(source.updatedAt || doc.revision || meta.revision || ""),
         pages:doc.pages.map(function (page, pageIndex) {
           return {
