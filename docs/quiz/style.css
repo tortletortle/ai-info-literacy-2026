@@ -168,3 +168,6 @@ button { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+.evidence-details { margin-top: 10px; color: var(--muted); font-size: 10px; }
+.evidence-details summary { cursor: pointer; color: var(--green); }
+.evidence-details p { margin: 6px 0 0; padding: 9px; border-radius: 7px; background: #f8faf8; white-space: pre-wrap; }
