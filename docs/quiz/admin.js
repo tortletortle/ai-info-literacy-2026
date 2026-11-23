@@ -86,6 +86,9 @@
     if (!stem || stem.length < 8) return null;
 
     var module = modules.find(function (item) { return item.id === block.moduleId; });
+    var answerShapeValid = type === "single" ? answer.length === 1 :
+      type === "multi" ? answer.length >= 2 && answer.length <= 4 : answer.length === 1;
+    var canVerify = options.length >= 2 && answerShapeValid;
     var sourceTitle = $("sourceTitle").value.trim();
     var sourceUrl = $("sourceUrl").value.trim();
     var sourceId = $("sourceId").value.trim() || "SRC-UNKNOWN";
@@ -108,6 +111,7 @@
         quote:block.lines.join("\n").slice(0,1600)
       },
       reviewStatus:"pending",
+      canVerify:canVerify,
       extractionWarnings:[
         answer.length ? "" : "未识别到可用答案，需人工核对",
         options.length ? "" : (type === "judge" ? "" : "未识别到选项，需人工核对"),
@@ -232,13 +236,20 @@
       var checkbox = make("input","");
       checkbox.type = "checkbox";
       checkbox.checked = question.reviewStatus === "verified";
+      checkbox.disabled = !question.canVerify;
       checkbox.addEventListener("change",function () {
         question.reviewStatus = checkbox.checked ? "verified" : "pending";
         head.lastChild.textContent = question.reviewStatus === "verified" ? "已核验" : "待核验";
+        candidateCount.textContent = candidates.length + " 道候选题 · 已核验 " + candidates.filter(function (q) { return q.reviewStatus === "verified"; }).length;
       });
       review.appendChild(checkbox);
-      review.appendChild(document.createTextNode("我已对照原文核验题干、选项、正确答案和解析，允许加入正式题库"));
+      review.appendChild(document.createTextNode(question.canVerify ?
+        "我已对照原文核验题干、选项、正确答案和解析，允许加入正式题库" :
+        "当前抽取结果缺少选项或答案结构不完整，不能直接标记为已核验"));
       body.appendChild(review);
+      if (question.extractionWarnings && question.extractionWarnings.length) {
+        body.appendChild(make("div","candidate-meta","抽取提示：" + question.extractionWarnings.join("；")));
+      }
       card.appendChild(body);
       candidateResults.appendChild(card);
     });
@@ -266,6 +277,7 @@
       if (!text || text.replace(/[\s\u3000]/g,"").length < 30) {
         throw new Error("没有提取到足够文本。文件可能是扫描版 PDF，需要 OCR 后再导入。");
       }
+      await modulesReady;
       candidates = parseDocumentText(text);
       renderCandidates();
       setStatus("解析完成：提取到 " + candidates.length + " 道候选题。所有题目默认待核验；请展开原文摘录逐题确认。","success");
@@ -302,14 +314,18 @@
     URL.revokeObjectURL(url);
   });
 
-  fetch("./data/modules.json").then(function (response) {
+  var modulesReady = fetch("./data/modules.json").then(function (response) {
     if (!response.ok) throw new Error("模块目录加载失败");
     return response.json();
   }).then(function (payload) {
     modules = payload.modules || [];
   }).catch(function (error) {
     console.warn(error);
+    return {modules:[]};
   });
 
-  window.QuizMindImporter = {parseDocumentText:parseDocumentText};
+  window.QuizMindImporter = {
+    parseDocumentText:parseDocumentText,
+    modulesReady:modulesReady
+  };
 })();
