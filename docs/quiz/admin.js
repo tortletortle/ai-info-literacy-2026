@@ -121,9 +121,11 @@
     var module = modules.find(function (item) { return item.id === block.moduleId; });
     var sourceTitle = $("sourceTitle").value.trim();
     var sourceUrl = $("sourceUrl").value.trim();
-    var sourceId = $("sourceId").value.trim() || "SRC-UNKNOWN";
+    var sourceIdInput = $("sourceId").value.trim();
+    var sourceId = sourceIdInput || "SRC-UNKNOWN";
     var revision = $("sourceRevision").value.trim();
     var authority = $("sourceAuthority").value || "C";
+    var sourceUrlReady = !sourceUrl || /^https:\/\//i.test(sourceUrl);
     var quote = block.lines.join("\n").slice(0,1600);
     var optionKeys = options.map(function (option) { return option.key; });
     var uniqueOptions = new Set(optionKeys).size === optionKeys.length &&
@@ -131,7 +133,8 @@
     var answerShapeValid = type === "single" ? answer.length === 1 :
       type === "multi" ? answer.length >= 2 && answer.length <= options.length : answer.length === 1;
     var sourceReady = (authority === "A" || authority === "B") &&
-      sourceTitle.length > 0 && sourceId.length > 0 && block.page > 0 && quote.trim().length >= 20;
+      sourceTitle.length > 0 && sourceIdInput.length > 0 && sourceUrlReady &&
+      block.page > 0 && quote.trim().length >= 20;
     var canVerify = options.length >= 2 && options.length <= 8 &&
       uniqueOptions && answerShapeValid && sourceReady;
     var safeSourceId = sourceId.replace(/[^A-Za-z0-9_-]/g,"").slice(0,32) || "SRC";
@@ -152,7 +155,7 @@
         url:sourceUrl,
         updatedAt:revision,
         page:block.page,
-        quote:block.lines.join("\n").slice(0,1600)
+        quote:quote
       },
       reviewStatus:"pending",
       canVerify:canVerify,
@@ -161,7 +164,7 @@
         options.length >= 2 ? "" : "未识别到完整选项，需人工核对",
         uniqueOptions ? "" : "选项编号重复、格式无效或选项内容为空",
         answerShapeValid ? "" : "答案数量与题型不匹配",
-        sourceReady ? "" : "来源等级、资料名称、来源编号、原文页码或原文摘录不足，不能核验",
+        sourceReady ? "" : "来源等级、资料名称、来源编号、HTTPS 来源链接、原文页码或原文摘录不足，不能核验",
         block.moduleId ? "" : "未识别到知识模块编号"
       ].filter(Boolean)
     };
