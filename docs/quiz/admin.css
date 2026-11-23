@@ -57,3 +57,6 @@
   .download-actions { width: 100%; flex-direction: column; }
   .download-actions .button { width: 100%; }
 }
+
+.field select { width: 100%; min-height: 39px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 8px; outline: none; color: var(--ink); background: #fcfdfb; font: inherit; font-size: 12px; }
+.field select:focus { border-color: #8bb39b; box-shadow: 0 0 0 3px rgba(35,107,80,.08); }
