@@ -101,6 +101,7 @@
         declaredAuthority:validAuthority,
         sourceUrl:String(source.url || doc.sourceUrl || meta.sourceUrl || ""),
         sourceConfirmedByUser:sourceConfirmed,
+        originalFile:String(doc.originalFile || meta.originalFile || ""),
         revision:String(source.updatedAt || doc.revision || meta.revision || ""),
         pages:(function () {
           var seenPages = new Set();
