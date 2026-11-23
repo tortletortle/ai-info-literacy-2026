@@ -26,6 +26,7 @@
   var downloadBtn = $("downloadBtn");
   var downloadKnowledgeBtn = $("downloadKnowledgeBtn");
   var saveLocalBtn = $("saveLocalBtn");
+  var backupWorkspaceBtn = $("backupWorkspaceBtn");
 
   function cleanLine(value) {
     return String(value || "").replace(/\u3000/g, " ").trim();
@@ -263,6 +264,7 @@
       window.quizMindDesktop.saveWorkspaceData &&
       window.quizMindDesktop.loadWorkspaceData &&
       lastPages.length);
+    backupWorkspaceBtn.disabled = !(window.quizMindDesktop && window.quizMindDesktop.loadWorkspaceData);
   }
 
   function renderCandidates() {
@@ -460,6 +462,40 @@
       setStatus("保存失败：" + (error.message || "本机工作区写入失败"),"error");
     } finally {
       saveLocalBtn.textContent = "保存到本机工作区";
+      updateActionButtons();
+    }
+  });
+
+
+  backupWorkspaceBtn.addEventListener("click",async function () {
+    if (!window.quizMindDesktop || !window.quizMindDesktop.loadWorkspaceData) {
+      setStatus("完整工作区备份仅在桌面版中可用。","error");
+      return;
+    }
+    backupWorkspaceBtn.disabled = true;
+    backupWorkspaceBtn.textContent = "正在整理备份…";
+    try {
+      var workspace = await window.quizMindDesktop.loadWorkspaceData() || {
+        questions:[],
+        documents:[]
+      };
+      var payload = {
+        schemaVersion:1,
+        exportedAt:new Date().toISOString(),
+        questions:Array.isArray(workspace.questions) ? workspace.questions : [],
+        documents:Array.isArray(workspace.documents) ? workspace.documents : []
+      };
+      var stamp = new Date().toISOString().replace(/[:.]/g,"-");
+      downloadJson(payload,"quizmind-workspace-backup-" + stamp + ".json");
+      setStatus(
+        "完整工作区备份已导出：题目 " + payload.questions.length +
+        " 道，知识资料 " + payload.documents.length + " 份。可在答题台通过导入数据合并恢复。",
+        "success"
+      );
+    } catch (error) {
+      setStatus("备份失败：" + (error.message || "无法读取本机工作区"),"error");
+    } finally {
+      backupWorkspaceBtn.textContent = "备份整个工作区";
       updateActionButtons();
     }
   });
