@@ -25,6 +25,7 @@
   var candidateCount = $("candidateCount");
   var downloadBtn = $("downloadBtn");
   var downloadKnowledgeBtn = $("downloadKnowledgeBtn");
+  var saveLocalBtn = $("saveLocalBtn");
 
   function cleanLine(value) {
     return String(value || "").replace(/\u3000/g, " ").trim();
@@ -118,17 +119,25 @@
     if (!stem || stem.length < 8) return null;
 
     var module = modules.find(function (item) { return item.id === block.moduleId; });
-    var answerShapeValid = type === "single" ? answer.length === 1 :
-      type === "multi" ? answer.length >= 2 && answer.length <= 4 : answer.length === 1;
-    var canVerify = options.length >= 2 && answerShapeValid;
     var sourceTitle = $("sourceTitle").value.trim();
     var sourceUrl = $("sourceUrl").value.trim();
     var sourceId = $("sourceId").value.trim() || "SRC-UNKNOWN";
     var revision = $("sourceRevision").value.trim();
     var authority = $("sourceAuthority").value || "C";
+    var quote = block.lines.join("\n").slice(0,1600);
+    var optionKeys = options.map(function (option) { return option.key; });
+    var uniqueOptions = new Set(optionKeys).size === optionKeys.length &&
+      options.every(function (option) { return /^[A-H]$/.test(option.key) && option.text.trim().length > 0; });
+    var answerShapeValid = type === "single" ? answer.length === 1 :
+      type === "multi" ? answer.length >= 2 && answer.length <= options.length : answer.length === 1;
+    var sourceReady = (authority === "A" || authority === "B") &&
+      sourceTitle.length > 0 && sourceId.length > 0 && block.page > 0 && quote.trim().length >= 20;
+    var canVerify = options.length >= 2 && options.length <= 8 &&
+      uniqueOptions && answerShapeValid && sourceReady;
+    var safeSourceId = sourceId.replace(/[^A-Za-z0-9_-]/g,"").slice(0,32) || "SRC";
 
     return {
-      id:"OFFICIAL-M" + String(block.moduleId || 0).padStart(2,"0") + "-" + String(index).padStart(3,"0"),
+      id:safeSourceId + "-M" + String(block.moduleId || 0).padStart(2,"0") + "-" + String(index).padStart(3,"0"),
       stem:stem,
       type:type,
       options:options,
@@ -150,6 +159,9 @@
       extractionWarnings:[
         answer.length ? "" : "未识别到可用答案，需人工核对",
         options.length >= 2 ? "" : "未识别到完整选项，需人工核对",
+        uniqueOptions ? "" : "选项编号重复、格式无效或选项内容为空",
+        answerShapeValid ? "" : "答案数量与题型不匹配",
+        sourceReady ? "" : "来源等级、资料名称、来源编号、原文页码或原文摘录不足，不能核验",
         block.moduleId ? "" : "未识别到知识模块编号"
       ].filter(Boolean)
     };
@@ -239,6 +251,15 @@
     return node;
   }
 
+  function updateActionButtons() {
+    downloadBtn.disabled = !candidates.length;
+    downloadKnowledgeBtn.disabled = !lastPages.length;
+    saveLocalBtn.disabled = !(window.quizMindDesktop &&
+      window.quizMindDesktop.saveWorkspaceData &&
+      window.quizMindDesktop.loadWorkspaceData &&
+      lastPages.length);
+  }
+
   function renderCandidates() {
     candidateResults.replaceChildren();
     if (!candidates.length) {
@@ -247,7 +268,7 @@
       empty.appendChild(make("p","","请确认资料包含“样题（单选题/多选题/判断题）”和“正确答案”等文本。扫描版 PDF 需要先 OCR。"));
       candidateResults.appendChild(empty);
       candidateCount.textContent = "0 道候选题";
-      downloadBtn.disabled = true;
+      updateActionButtons();
       return;
     }
 
@@ -289,6 +310,7 @@
         question.reviewStatus = checkbox.checked ? "verified" : "pending";
         head.lastChild.textContent = question.reviewStatus === "verified" ? "已核验" : "待核验";
         candidateCount.textContent = candidates.length + " 道候选题 · 已核验 " + candidates.filter(function (q) { return q.reviewStatus === "verified"; }).length;
+        updateActionButtons();
       });
       review.appendChild(checkbox);
       review.appendChild(document.createTextNode(question.canVerify ?
@@ -302,7 +324,7 @@
       candidateResults.appendChild(card);
     });
     candidateCount.textContent = candidates.length + " 道候选题 · 已核验 " + candidates.filter(function (q) { return q.reviewStatus === "verified"; }).length;
-    downloadBtn.disabled = false;
+    updateActionButtons();
   }
 
   sourceFile.addEventListener("change",function () {
@@ -328,16 +350,15 @@
       await modulesReady;
       lastExtractedText = text;
       lastPages = splitPages(text);
-      downloadKnowledgeBtn.disabled = !lastPages.length;
       candidates = parseDocumentText(text);
       renderCandidates();
-      setStatus("解析完成：提取到 " + candidates.length + " 道候选题。所有题目默认待核验；请展开原文摘录逐题确认。","success");
+      setStatus("解析完成：提取到 " + candidates.length + " 道候选题。所有题目默认待核验；A/B 级资料、完整原文定位和逐题人工确认均为入库条件。","success");
     } catch (error) {
       setStatus("解析失败：" + error.message,"error");
       candidates = [];
       lastExtractedText = "";
       lastPages = [];
-      downloadKnowledgeBtn.disabled = true;
+      updateActionButtons();
       renderCandidates();
     } finally {
       extractBtn.disabled = !selectedFile;
@@ -370,6 +391,70 @@
       questions:candidates
     };
     downloadJson(payload,"quizmind-candidate-questions.json");
+  });
+
+
+  saveLocalBtn.addEventListener("click",async function () {
+    if (!window.quizMindDesktop || !window.quizMindDesktop.saveWorkspaceData) {
+      setStatus("本机工作区保存仅在桌面版中可用；浏览器预览请使用 JSON 导出。","error");
+      return;
+    }
+    if (!lastPages.length) {
+      setStatus("没有可保存的资料页，请先完成 PDF/TXT 解析。","error");
+      return;
+    }
+
+    saveLocalBtn.disabled = true;
+    saveLocalBtn.textContent = "正在保存到本机…";
+    try {
+      var verifiedQuestions = candidates.filter(function (question) {
+        return question.reviewStatus === "verified" && question.canVerify;
+      });
+      var workspace = await window.quizMindDesktop.loadWorkspaceData() || {
+        questions:[],
+        documents:[]
+      };
+      var questionMap = new Map((Array.isArray(workspace.questions) ? workspace.questions : [])
+        .filter(function (question) { return question && question.id; })
+        .map(function (question) { return [String(question.id),question]; }));
+      verifiedQuestions.forEach(function (question) {
+        questionMap.set(question.id,question);
+      });
+
+      var sourceId = $("sourceId").value.trim() || "SRC-UNKNOWN";
+      var revision = $("sourceRevision").value.trim();
+      var safeRevision = revision.replace(/[^A-Za-z0-9_-]/g,"").slice(0,24) || "latest";
+      var documentId = sourceId.replace(/[^A-Za-z0-9_-]/g,"").slice(0,32) + "-DOC-" + safeRevision;
+      var sourceDocument = {
+        id:documentId,
+        title:$("sourceTitle").value.trim() || "未命名资料",
+        sourceId:sourceId,
+        authority:$("sourceAuthority").value || "C",
+        sourceUrl:$("sourceUrl").value.trim(),
+        revision:revision,
+        pages:lastPages
+      };
+      var documents = (Array.isArray(workspace.documents) ? workspace.documents : [])
+        .filter(function (document) { return document && document.id !== documentId; });
+      documents.push(sourceDocument);
+
+      var saved = await window.quizMindDesktop.saveWorkspaceData({
+        questions:Array.from(questionMap.values()),
+        documents:documents
+      });
+      renderCandidates();
+      setStatus(
+        "已保存到本机工作区：新增/更新 " + verifiedQuestions.length +
+        " 道已人工核验题目，资料 " + lastPages.length + " 页；当前题库共 " +
+        saved.questionCount + " 道、知识资料 " + saved.documentCount + " 份。",
+        "success"
+      );
+    } catch (error) {
+      setStatus("保存失败：" + (error.message || "本机工作区写入失败"),"error");
+    } finally {
+      saveLocalBtn.textContent = "保存到本机工作区";
+      updateActionButtons();
+    }
   });
 
   downloadKnowledgeBtn.addEventListener("click",function () {
