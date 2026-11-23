@@ -538,6 +538,7 @@
         sourceId:$("sourceId").value.trim() || "SRC-UNKNOWN",
         authority:$("sourceAuthority").value || "C",
         sourceUrl:$("sourceUrl").value.trim(),
+        sourceConfirmedByUser:$("sourceConfirmed").checked === true,
         revision:$("sourceRevision").value.trim(),
         originalFile:selectedFile ? selectedFile.name : "",
         extractedAt:new Date().toISOString(),
@@ -546,6 +547,7 @@
       },
       documents:[{
         id:($("sourceId").value.trim() || "SRC-UNKNOWN") + "-DOC-001",
+        sourceConfirmedByUser:$("sourceConfirmed").checked === true,
         pages:lastPages
       }]
     };
