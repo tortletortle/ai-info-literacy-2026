@@ -39,7 +39,7 @@ GitHub Actions 会在桌面代码、资料页面或工作流变更时运行 Wind
 
 用户数据保存在 Electron app.getPath("userData") 目录下的 workspace.json 与 settings.json。API Key 不以明文写入 settings 文件。
 
-目前可通过资料整理页导出候选题库/全文知识库 JSON。整个工作区的一键备份与恢复仍在后续迭代中；在其完成前，建议定期分别导出题库与资料库。
+资料整理页支持「备份整个工作区」，导出包含已审核题目与所有知识资料页的 JSON。恢复时在答题台导入该备份，系统按稳定 ID 合并记录；同 ID 记录会更新，其他本地记录保留。
 
 ## 次级浏览器预览
 
