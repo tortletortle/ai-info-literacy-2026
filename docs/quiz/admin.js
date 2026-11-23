@@ -6,6 +6,9 @@
   var modules = [];
   var lastExtractedText = "";
   var lastPages = [];
+  var MAX_IMPORT_FILE_BYTES = 25 * 1024 * 1024;
+  var MAX_EXTRACTED_TEXT_CHARS = 15 * 1024 * 1024;
+  var MAX_PDF_PAGES = 3000;
   var pdfjsReady = (async function () {
     if (window.quizMindDesktop) {
       var localPdfjs = await import("./vendor/pdf.mjs");
@@ -229,20 +232,35 @@
     } catch (error) {
       throw new Error("PDF 解析组件加载失败：" + error.message);
     }
+    if (Number(file.size) > MAX_IMPORT_FILE_BYTES) {
+      throw new Error("文件超过 25 MB，请拆分后再导入。");
+    }
     var buffer = await file.arrayBuffer();
     var pdf = await pdfjsLib.getDocument({data:buffer}).promise;
     var pages = [];
-    for (var pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
-      var page = await pdf.getPage(pageNo);
-      var content = await page.getTextContent();
-      var pageText = "";
-      content.items.forEach(function (item) {
-        pageText += item.str || "";
-        pageText += item.hasEOL ? "\n" : " ";
-      });
-      pages.push("<<<PAGE:" + pageNo + ">>>\n" + pageText);
+    var extractedChars = 0;
+    try {
+      if (pdf.numPages > MAX_PDF_PAGES) {
+        throw new Error("PDF 超过 3000 页，请拆分后再导入。");
+      }
+      for (var pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
+        var page = await pdf.getPage(pageNo);
+        var content = await page.getTextContent();
+        var pageText = "";
+        content.items.forEach(function (item) {
+          pageText += item.str || "";
+          pageText += item.hasEOL ? "\n" : " ";
+        });
+        extractedChars += pageText.length;
+        if (extractedChars > MAX_EXTRACTED_TEXT_CHARS) {
+          throw new Error("PDF 提取文本超过 15 MB，请拆分后再导入。");
+        }
+        pages.push("<<<PAGE:" + pageNo + ">>>\n" + pageText);
+      }
+      return pages.join("\n");
+    } finally {
+      await pdf.destroy();
     }
-    return pages.join("\n");
   }
 
   function setStatus(message, kind) {
@@ -371,6 +389,10 @@
 
   extractBtn.addEventListener("click",async function () {
     if (!selectedFile) return;
+    if (Number(selectedFile.size) > MAX_IMPORT_FILE_BYTES) {
+      setStatus("文件超过 25 MB，请拆分后再导入。","error");
+      return;
+    }
     extractBtn.disabled = true;
     extractBtn.textContent = "正在解析…";
     setStatus("正在本地读取资料，请稍候。","");
@@ -380,6 +402,9 @@
       if (/\.pdf$/i.test(selectedFile.name)) text = await extractPdf(selectedFile);
       else text = await selectedFile.text();
 
+      if (text && text.length > MAX_EXTRACTED_TEXT_CHARS) {
+        throw new Error("提取文本超过 15 MB，请拆分后再导入。");
+      }
       if (!text || text.replace(/[\s\u3000]/g,"").length < 30) {
         throw new Error("没有提取到足够文本。文件可能是扫描版 PDF，需要 OCR 后再导入。");
       }
