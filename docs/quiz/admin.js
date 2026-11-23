@@ -4,6 +4,8 @@
   var selectedFile = null;
   var candidates = [];
   var modules = [];
+  var lastExtractedText = "";
+  var lastPages = [];
 
   var sourceFile = $("sourceFile");
   var fileName = $("fileName");
@@ -12,6 +14,7 @@
   var candidateResults = $("candidateResults");
   var candidateCount = $("candidateCount");
   var downloadBtn = $("downloadBtn");
+  var downloadKnowledgeBtn = $("downloadKnowledgeBtn");
 
   function cleanLine(value) {
     return String(value || "").replace(/\u3000/g, " ").trim();
@@ -139,6 +142,17 @@
       ].filter(Boolean)
     };
   }
+  function splitPages(text) {
+    var pattern = /<<<PAGE\s*:\s*(\d+)>>>\s*([\s\S]*?)(?=<<<PAGE\s*:\s*\d+>>>|$)/g;
+    var pages = [];
+    var match;
+    while ((match = pattern.exec(text)) !== null) {
+      pages.push({page:Number(match[1]),text:match[2].trim()});
+    }
+    if (!pages.length && String(text || "").trim()) pages.push({page:1,text:String(text).trim()});
+    return pages;
+  }
+
   function parseDocumentText(text) {
     var lines = String(text || "").split(/\r?\n/);
     var active = null;
@@ -297,18 +311,36 @@
         throw new Error("没有提取到足够文本。文件可能是扫描版 PDF，需要 OCR 后再导入。");
       }
       await modulesReady;
+      lastExtractedText = text;
+      lastPages = splitPages(text);
+      downloadKnowledgeBtn.disabled = !lastPages.length;
       candidates = parseDocumentText(text);
       renderCandidates();
       setStatus("解析完成：提取到 " + candidates.length + " 道候选题。所有题目默认待核验；请展开原文摘录逐题确认。","success");
     } catch (error) {
       setStatus("解析失败：" + error.message,"error");
       candidates = [];
+      lastExtractedText = "";
+      lastPages = [];
+      downloadKnowledgeBtn.disabled = true;
       renderCandidates();
     } finally {
       extractBtn.disabled = !selectedFile;
       extractBtn.innerHTML = "提取候选题目 <span class='button-arrow'>→</span>";
     }
   });
+
+  function downloadJson(payload, filename) {
+    var blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
 
   downloadBtn.addEventListener("click",function () {
     if (!candidates.length) return;
@@ -322,15 +354,29 @@
       },
       questions:candidates
     };
-    var blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "quizmind-candidate-questions.json";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    downloadJson(payload,"quizmind-candidate-questions.json");
+  });
+
+  downloadKnowledgeBtn.addEventListener("click",function () {
+    if (!lastPages.length) return;
+    var payload = {
+      schemaVersion:1,
+      meta:{
+        name:$("sourceTitle").value.trim() || "未命名资料",
+        sourceId:$("sourceId").value.trim() || "SRC-UNKNOWN",
+        sourceUrl:$("sourceUrl").value.trim(),
+        revision:$("sourceRevision").value.trim(),
+        originalFile:selectedFile ? selectedFile.name : "",
+        extractedAt:new Date().toISOString(),
+        pageCount:lastPages.length,
+        note:"本文件由浏览器本地 PDF/TXT 文本抽取得到；原文页段未经语义清洗，使用前应检查页码和乱码。"
+      },
+      documents:[{
+        id:($("sourceId").value.trim() || "SRC-UNKNOWN") + "-DOC-001",
+        pages:lastPages
+      }]
+    };
+    downloadJson(payload,"quizmind-knowledge-documents.json");
   });
 
   var modulesReady = fetch("./data/modules.json").then(function (response) {
