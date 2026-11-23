@@ -115,6 +115,7 @@
     var sourceUrl = $("sourceUrl").value.trim();
     var sourceId = $("sourceId").value.trim() || "SRC-UNKNOWN";
     var revision = $("sourceRevision").value.trim();
+    var authority = $("sourceAuthority").value || "C";
 
     return {
       id:"OFFICIAL-M" + String(block.moduleId || 0).padStart(2,"0") + "-" + String(index).padStart(3,"0"),
@@ -127,6 +128,7 @@
       module:module ? {id:module.id,category:module.category,name:module.name} : {id:block.moduleId || 0,name:"待归类"},
       source:{
         id:sourceId,
+        authority:authority,
         title:sourceTitle || "未注明资料",
         url:sourceUrl,
         updatedAt:revision,
@@ -364,6 +366,7 @@
       meta:{
         name:$("sourceTitle").value.trim() || "未命名资料",
         sourceId:$("sourceId").value.trim() || "SRC-UNKNOWN",
+        authority:$("sourceAuthority").value || "C",
         sourceUrl:$("sourceUrl").value.trim(),
         revision:$("sourceRevision").value.trim(),
         originalFile:selectedFile ? selectedFile.name : "",
