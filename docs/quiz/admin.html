@@ -41,6 +41,13 @@
           <label class="field">修订版 / 日期
             <input id="sourceRevision" type="text" placeholder="不确定可留空，例如：2026-09-10 修订版">
           </label>
+          <label class="field">来源等级
+            <select id="sourceAuthority">
+              <option value="A">A · 主办方 / 官方平台</option>
+              <option value="B" selected>B · 高校图书馆官方通知</option>
+              <option value="C">C · 第三方资料（仅线索）</option>
+            </select>
+          </label>
         </div>
 
         <label class="file-drop" for="sourceFile">
