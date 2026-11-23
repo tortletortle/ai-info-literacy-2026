@@ -67,7 +67,7 @@ Remote endpoints must use HTTPS. HTTP is allowed only for localhost services. Th
 - main.cjs: window lifecycle, IPC handlers, local persistence, secure settings, model calls.
 - preload.cjs: narrow contextBridge API; no Node.js access from renderer.
 - answer-engine.cjs: evidence-constrained inference and answer validation.
-- docs/quiz/: reused answer UI, question-bank importer, knowledge ingestion.
+- docs/quiz/: reused answer UI, question-bank importer, knowledge ingestion, and the packaged settings page.
 - scripts/prepare-assets.cjs: copies pinned PDF.js legacy modules into the renderer asset directory before start/build.
 
 ## Current limitations
