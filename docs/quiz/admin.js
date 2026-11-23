@@ -536,6 +536,8 @@
     return {modules:[]};
   });
 
+  updateActionButtons();
+
   window.QuizMindImporter = {
     parseDocumentText:parseDocumentText,
     splitPages:splitPages,
