@@ -11,7 +11,7 @@ const SYSTEM_PROMPT = [
   "只能使用用户提供的 evidence 数组作答，不得使用模型记忆补充事实，不得虚构来源、页码或引文。",
   "必须逐项分析每个选项，verdict 只能是 supported、refuted、insufficient。",
   "单选题必须恰好一个 supported，其他选项必须 refuted；只要存在 insufficient 就返回 uncertain。",
-  "多选题必须完整判断所有选项，supported 的选项数必须为 2 到 4；任何选项 insufficient 都返回 uncertain。",
+  "多选题必须完整判断所有选项；按请求给出的 multiAnswerMin / multiAnswerMax 约束正确项数量，未给出时范围为 1 到选项总数；任何选项 insufficient 都返回 uncertain。",
   "判断题必须恰好一个选项 supported，且两个选项都要有证据判断。",
   "证据不足、来源不相关、问题需要资料之外的实时事实时，返回 uncertain，不要猜测。",
   "只返回一个 JSON 对象，不要 Markdown，不要代码围栏。",
@@ -41,7 +41,7 @@ function parseModelJson(raw) {
   return JSON.parse(text.slice(first, last + 1));
 }
 
-function validateModelResult(result, type, options, evidence) {
+function validateModelResult(result, type, options, evidence, multiMin, multiMax) {
   const validKeys = new Set(options.map((option) => option.key));
   const validEvidenceIds = new Set(evidence.map((item) => item.id));
   const analysis = Array.isArray(result.optionAnalysis) ? result.optionAnalysis : [];
@@ -73,7 +73,7 @@ function validateModelResult(result, type, options, evidence) {
 
   const requiredCountValid =
     (type === "single" && supported.length === 1) ||
-    (type === "multi" && supported.length >= 2 && supported.length <= 4) ||
+    (type === "multi" && supported.length >= multiMin && supported.length <= multiMax) ||
     (type === "judge" && supported.length === 1);
 
   const confidence = ["high", "medium", "low"].includes(result.confidence)
@@ -159,7 +159,9 @@ export async function onRequestPost({ request, env }) {
     ? baseUrl
     : baseUrl + "/chat/completions";
 
-  const userPayload = { question, type, options, evidence };
+  const multiMin = type === "multi" ? Math.max(1, Math.min(options.length, Number(body.multiAnswerMin) || 1)) : 1;
+  const multiMax = type === "multi" ? Math.max(multiMin, Math.min(options.length, Number(body.multiAnswerMax) || options.length)) : 1;
+  const userPayload = { question, type, options, evidence, multiAnswerMin:multiMin, multiAnswerMax:multiMax };
 
   let providerResponse;
   try {
@@ -207,5 +209,5 @@ export async function onRequestPost({ request, env }) {
     return json(uncertain("模型输出格式无法验证，系统拒绝生成答案。", ["MODEL_JSON_PARSE_FAILED"]), 200);
   }
 
-  return json(validateModelResult(parsed, type, options, evidence));
+  return json(validateModelResult(parsed, type, options, evidence, multiMin, multiMax));
 }
