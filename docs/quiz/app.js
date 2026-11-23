@@ -89,10 +89,10 @@
       var source = doc.source && typeof doc.source === "object" ? doc.source : {};
       return {
         id:String(doc.id || ("DOC-" + (index + 1))),
-        title:String(source.title || meta.name || "未命名资料"),
-        sourceId:String(source.id || meta.sourceId || ""),
-        sourceUrl:String(source.url || meta.sourceUrl || ""),
-        revision:String(source.updatedAt || meta.revision || ""),
+        title:String(source.title || doc.title || meta.name || "未命名资料"),
+        sourceId:String(source.id || doc.sourceId || meta.sourceId || ""),
+        sourceUrl:String(source.url || doc.sourceUrl || meta.sourceUrl || ""),
+        revision:String(source.updatedAt || doc.revision || meta.revision || ""),
         pages:doc.pages.map(function (page, pageIndex) {
           return {
             page:Number(page.page) || (pageIndex + 1),
