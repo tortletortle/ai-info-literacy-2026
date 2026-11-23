@@ -65,3 +65,6 @@
 @media (max-width: 760px) {
   .download-actions { align-items: stretch; }
 }
+
+.source-confirmation { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: #fafbf9; font-size: 11px; line-height: 1.55; }
+.source-confirmation input { flex: 0 0 auto; margin-top: 2px; accent-color: var(--green); }
