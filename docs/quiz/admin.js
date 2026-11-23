@@ -35,6 +35,16 @@
     return String(value || "").replace(/\u3000/g, " ").trim();
   }
 
+  function isSafeHttpsUrl(value) {
+    if (!value) return true;
+    try {
+      var parsed = new URL(value);
+      return parsed.protocol === "https:" && !parsed.username && !parsed.password;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function getPageNumber(line, currentPage) {
     var match = line.match(/<<<PAGE\s*:\s*(\d+)>>>/) || line.match(/^=+\s*PAGE\s+(\d+)\s*=+$/);
     return match ? Number(match[1]) : currentPage;
@@ -130,7 +140,7 @@
     var revision = $("sourceRevision").value.trim();
     var authority = $("sourceAuthority").value || "C";
     var sourceConfirmed = $("sourceConfirmed").checked === true;
-    var sourceUrlReady = !sourceUrl || /^https:\/\//i.test(sourceUrl);
+    var sourceUrlReady = isSafeHttpsUrl(sourceUrl);
     var quote = block.lines.join("\n").slice(0,1600);
     var optionKeys = options.map(function (option) { return option.key; });
     var uniqueOptions = new Set(optionKeys).size === optionKeys.length &&
