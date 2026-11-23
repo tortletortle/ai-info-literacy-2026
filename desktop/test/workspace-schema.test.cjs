@@ -120,3 +120,15 @@ test("downgrades unconfirmed A/B documents to C-level evidence", () => {
   assert.equal(result.documents[0].declaredAuthority, "A");
   assert.equal(result.documents[0].authority, "C");
 });
+
+
+test("rejects zero and fractional page numbers instead of silently renumbering", () => {
+  assert.throws(() => normalizeWorkspace({
+    questions: [],
+    documents: [{ id: "DOC-ZERO", pages: [{ page: 0, text: "bad" }] }]
+  }), /无效页码/);
+  assert.throws(() => normalizeWorkspace({
+    questions: [],
+    documents: [{ id: "DOC-FRACTION", pages: [{ page: 1.5, text: "bad" }] }]
+  }), /无效页码/);
+});
