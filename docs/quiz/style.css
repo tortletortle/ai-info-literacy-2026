@@ -171,3 +171,6 @@ button { cursor: pointer; }
 .evidence-details { margin-top: 10px; color: var(--muted); font-size: 10px; }
 .evidence-details summary { cursor: pointer; color: var(--green); }
 .evidence-details p { margin: 6px 0 0; padding: 9px; border-radius: 7px; background: #f8faf8; white-space: pre-wrap; }
+
+.evidence-details a { display: inline-block; margin-top: 7px; color: var(--green); font-size: 10px; text-decoration: none; }
+.evidence-details a:hover { text-decoration: underline; }
