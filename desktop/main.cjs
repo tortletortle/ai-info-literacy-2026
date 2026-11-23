@@ -1,0 +1,219 @@
+"use strict";
+
+const { app, BrowserWindow, ipcMain, shell, safeStorage } = require("electron");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+const { fileURLToPath } = require("node:url");
+const { answerWithEvidence, testProvider, resolveEndpoint } = require("./answer-engine.cjs");
+
+const APP_ID = "com.quizmind.ai";
+let mainWindow = null;
+
+function getQuizDirectory() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, "quiz")
+    : path.join(__dirname, "..", "docs", "quiz");
+}
+
+function getUserFile(name) {
+  return path.join(app.getPath("userData"), name);
+}
+
+async function readJson(filePath, fallback) {
+  try {
+    return JSON.parse(await fs.readFile(filePath, "utf8"));
+  } catch (error) {
+    if (error && error.code === "ENOENT") return fallback;
+    throw error;
+  }
+}
+
+async function writeJsonAtomic(filePath, value) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  const tempPath = filePath + ".tmp";
+  await fs.writeFile(tempPath, JSON.stringify(value, null, 2), "utf8");
+  await fs.rename(tempPath, filePath);
+}
+
+function validateBaseUrl(value) {
+  const baseUrl = String(value || "").trim().replace(/\/+$/, "");
+  if (!baseUrl) return "";
+  resolveEndpoint(baseUrl);
+  return baseUrl;
+}
+
+async function readRawSettings() {
+  return readJson(getUserFile("settings.json"), {
+    baseUrl: "",
+    model: "",
+    apiKeyEncrypted: ""
+  });
+}
+
+async function getDecryptedSettings() {
+  const stored = await readRawSettings();
+  let apiKey = "";
+  if (stored.apiKeyEncrypted) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error("系统安全存储暂不可用，无法读取已保存的 API Key。");
+    }
+    apiKey = safeStorage.decryptString(Buffer.from(stored.apiKeyEncrypted, "base64"));
+  }
+  return {
+    baseUrl: stored.baseUrl || "",
+    model: stored.model || "",
+    apiKey
+  };
+}
+
+async function getPublicSettings() {
+  const stored = await readRawSettings();
+  return {
+    baseUrl: stored.baseUrl || "",
+    model: stored.model || "",
+    apiKeyConfigured: Boolean(stored.apiKeyEncrypted),
+    encryptionAvailable: safeStorage.isEncryptionAvailable()
+  };
+}
+
+async function saveSettings(input) {
+  const stored = await readRawSettings();
+  const baseUrl = validateBaseUrl(input && input.baseUrl);
+  const model = String(input && input.model || "").trim().slice(0, 200);
+
+  if (input && input.clearApiKey) stored.apiKeyEncrypted = "";
+  const apiKey = String(input && input.apiKey || "").trim();
+  if (apiKey) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error("系统加密存储不可用，拒绝以明文保存 API Key。");
+    }
+    stored.apiKeyEncrypted = safeStorage.encryptString(apiKey).toString("base64");
+  }
+
+  stored.baseUrl = baseUrl;
+  stored.model = model;
+  await writeJsonAtomic(getUserFile("settings.json"), stored);
+  return getPublicSettings();
+}
+
+async function loadWorkspace() {
+  return readJson(getUserFile("workspace.json"), null);
+}
+
+async function saveWorkspace(value) {
+  if (!value || typeof value !== "object") throw new Error("工作区数据格式无效。");
+  const questions = Array.isArray(value.questions) ? value.questions : [];
+  const documents = Array.isArray(value.documents) ? value.documents : [];
+  const normalized = { schemaVersion: 1, questions, documents, savedAt: new Date().toISOString() };
+  const serialized = JSON.stringify(normalized);
+  if (Buffer.byteLength(serialized, "utf8") > 50 * 1024 * 1024) {
+    throw new Error("本地工作区超过 50 MB，请拆分资料后导入。");
+  }
+  await writeJsonAtomic(getUserFile("workspace.json"), normalized);
+  return { ok: true, questionCount: questions.length, documentCount: documents.length };
+}
+
+async function readQuizData(fileName) {
+  const allowed = new Set(["questions.json", "modules.json"]);
+  if (!allowed.has(fileName)) throw new Error("不允许读取该资料文件。");
+  return readJson(path.join(getQuizDirectory(), "data", fileName), {});
+}
+
+function openSafeExternal(urlValue) {
+  const url = new URL(String(urlValue || ""));
+  if (url.protocol !== "https:") throw new Error("只允许打开 HTTPS 外部链接。");
+  return shell.openExternal(url.toString());
+}
+
+function registerIpcHandlers() {
+  ipcMain.handle("app:info", () => ({
+    name: app.getName(),
+    version: app.getVersion(),
+    platform: process.platform
+  }));
+
+  ipcMain.handle("settings:get", () => getPublicSettings());
+  ipcMain.handle("settings:save", (_event, input) => saveSettings(input || {}));
+  ipcMain.handle("settings:test", async () => {
+    const settings = await getDecryptedSettings();
+    return testProvider(settings);
+  });
+
+  ipcMain.handle("answer:run", async (_event, payload) => {
+    const settings = await getDecryptedSettings();
+    return answerWithEvidence({ payload: payload || {}, settings });
+  });
+
+  ipcMain.handle("workspace:load", () => loadWorkspace());
+  ipcMain.handle("workspace:save", (_event, value) => saveWorkspace(value));
+  ipcMain.handle("data:questions", () => readQuizData("questions.json"));
+  ipcMain.handle("data:modules", () => readQuizData("modules.json"));
+  ipcMain.handle("app:openExternal", (_event, url) => openSafeExternal(url));
+}
+
+function createMainWindow() {
+  const quizDirectory = getQuizDirectory();
+  mainWindow = new BrowserWindow({
+    width: 1320,
+    height: 900,
+    minWidth: 1000,
+    minHeight: 700,
+    show: false,
+    backgroundColor: "#f6f7f5",
+    title: "QuizMind AI",
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true
+    }
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const target = new URL(url);
+      if (target.protocol === "https:") shell.openExternal(target.toString());
+    } catch (_) {}
+    return { action: "deny" };
+  });
+
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    try {
+      const target = new URL(url);
+      if (target.protocol !== "file:") {
+        event.preventDefault();
+        return;
+      }
+      const destination = fileURLToPath(target);
+      const relative = path.relative(quizDirectory, destination);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) event.preventDefault();
+    } catch (_) {
+      event.preventDefault();
+    }
+  });
+
+  mainWindow.webContents.on("will-attach-webview", (event) => event.preventDefault());
+  mainWindow.once("ready-to-show", () => mainWindow.show());
+  mainWindow.on("closed", () => { mainWindow = null; });
+  mainWindow.loadFile(path.join(quizDirectory, "index.html"));
+}
+
+const hasLock = app.requestSingleInstanceLock();
+if (!hasLock) {
+  app.quit();
+} else {
+  app.whenReady().then(() => {
+    app.setAppUserModelId(APP_ID);
+    registerIpcHandlers();
+    createMainWindow();
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    });
+  });
+}
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
