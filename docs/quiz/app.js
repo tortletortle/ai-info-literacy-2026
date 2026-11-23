@@ -89,7 +89,7 @@
     return docs.map(function (doc, index) {
       if (!doc || !Array.isArray(doc.pages)) throw new Error("第 " + (index + 1) + " 份资料缺少 pages 数组");
       var source = doc.source && typeof doc.source === "object" ? doc.source : {};
-      var declaredAuthority = source.authority || doc.authority || meta.authority || "C";
+      var declaredAuthority = doc.declaredAuthority || source.authority || doc.authority || meta.authority || "C";
       var sourceConfirmed = doc.sourceConfirmedByUser === true || source.confirmedByUser === true;
       var validAuthority = ["A","B","C"].indexOf(declaredAuthority) >= 0 ? declaredAuthority : "C";
       return {
