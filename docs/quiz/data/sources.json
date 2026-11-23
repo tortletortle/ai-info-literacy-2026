@@ -52,7 +52,10 @@
       "type": "third-party-transcription",
       "url": "https://github.com/Ziv-ZHI/ai-infolit-competition/blob/main/_work/guide_full.txt",
       "accessedAt": "2026-11-23",
-      "use": "仅用于定位官方文件章节、设计解析规则和交叉检查目录；不得单独作为最终答案依据。该仓库未声明可复用许可证，本项目不复制其题库数据或程序代码。"
+      "use": "仅用于定位官方文件章节、设计解析规则和交叉检查目录；不得单独作为最终答案依据。该仓库未声明可复用许可证，本项目不复制其题库数据或程序代码。",
+      "revisionClaim": "第三方备赛台声称使用 2026.9.10 修订版",
+      "verificationStatus": "unverified",
+      "accessNote": "当前可访问的官方高校通知附件仅明确标注 2026.7.17 修订版；9.10 修订版目前只在第三方整理页面出现，未取得官方原件，不得据此把模块或题目标记为官方已核验。"
     },
     {
       "id": "SRC-005",
