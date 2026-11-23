@@ -8,6 +8,7 @@ QuizMind is now desktop-first. The Windows application wraps the existing answer
 - electron-builder 26.18.1 (NSIS installer + portable EXE)
 - PDF.js 6.5.438 (bundled locally for PDF text extraction)
 - Existing HTML/CSS/JavaScript answer and ingestion UI, reused rather than rewritten.
+- A secure standard app:// protocol serves local assets and the matching PDF.js worker without relying on file:// worker behavior.
 
 ## Requirements
 
@@ -80,6 +81,7 @@ Remote endpoints must use HTTPS. HTTP is allowed only for localhost services. Th
 ## Security notes
 
 - contextIsolation: true, nodeIntegration: false, and a sandboxed renderer are enabled.
+- Local renderer assets are served from a scoped app://quizmind origin; path traversal and navigation outside the app origin are blocked.
 - Renderer can access only the explicit methods exposed by preload.cjs.
 - Remote links are restricted to HTTPS and opened in the system browser.
 - API secrets are encrypted through OS-backed safeStorage; plaintext keys are never written to the app's JSON settings file.
