@@ -72,7 +72,7 @@ Remote endpoints must use HTTPS. HTTP is allowed only for localhost services. Th
 
 ## Current limitations
 
-- The built-in verified question bank is empty pending review of the original official source PDF.
+- The built-in verified question bank is empty pending review of the original official source PDF. Imported candidates remain pending until manually checked; C-level third-party sources cannot be promoted to verified answers.
 - The 50-module taxonomy remains provisional until verified against the exact official PDF revision.
 - Scanned-PDF OCR, live web search, and automatic database verification are not included in V0.1.
 - The Windows installer is unsigned; Windows SmartScreen may show an unknown-publisher warning until code signing is configured.
