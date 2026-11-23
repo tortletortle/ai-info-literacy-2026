@@ -64,10 +64,18 @@
       answer: q.answer.map(function (key) { return String(key).toUpperCase(); }),
       explanation: String(q.explanation || ""),
       source: q.source && typeof q.source === "object" ? {
+        id: String(q.source.id || ""),
         title: String(q.source.title || "未注明来源"),
         url: String(q.source.url || ""),
-        updatedAt: String(q.source.updatedAt || "")
-      } : { title: "未注明来源", url: "", updatedAt: "" },
+        updatedAt: String(q.source.updatedAt || ""),
+        page: Number.isFinite(Number(q.source.page)) ? Number(q.source.page) : null,
+        quote: String(q.source.quote || "")
+      } : { id: "", title: "未注明来源", url: "", updatedAt: "", page: null, quote: "" },
+      module: q.module && typeof q.module === "object" ? {
+        id: Number(q.module.id) || 0,
+        category: String(q.module.category || ""),
+        name: String(q.module.name || "")
+      } : null,
       reviewStatus: q.reviewStatus === "verified" ? "verified" : "pending"
     };
   }
@@ -254,7 +262,9 @@
 
     var source = makeElement("div", "source-line");
     source.appendChild(makeElement("span", "", "来源：" + q.source.title));
-    if (q.source.updatedAt) source.appendChild(makeElement("span", "", "资料日期：" + q.source.updatedAt));
+    if (q.module && q.module.name) source.appendChild(makeElement("span", "", "模块：" + q.module.name));
+    if (q.source.page) source.appendChild(makeElement("span", "", "原文页码：" + q.source.page));
+    if (q.source.updatedAt) source.appendChild(makeElement("span", "", "资料版本：" + q.source.updatedAt));
     if (/^https:\/\/[^ ]+$/i.test(q.source.url)) {
       var link = makeElement("a", "", "查看来源");
       link.href = q.source.url;
@@ -263,6 +273,12 @@
       source.appendChild(link);
     }
     body.appendChild(source);
+    if (q.source.quote) {
+      var evidence = makeElement("details", "evidence-details");
+      evidence.appendChild(makeElement("summary", "", "查看原文证据"));
+      evidence.appendChild(makeElement("p", "", q.source.quote));
+      body.appendChild(evidence);
+    }
     card.appendChild(body);
     return card;
   }
