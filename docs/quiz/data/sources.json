@@ -40,6 +40,16 @@
       "publishedAt": "2026-09-15",
       "accessedAt": "2026-11-23",
       "use": "交叉核验 50 个知识模块、客观题题型与评分结构、合作数据库和平台模拟训练说明。"
+    },
+    {
+      "id": "SRC-004",
+      "title": "2026 年大学生“AI+信息素养”大赛命题范围文字转录",
+      "publisher": "第三方 GitHub 项目维护者",
+      "authority": "C",
+      "type": "third-party-transcription",
+      "url": "https://github.com/Ziv-ZHI/ai-infolit-competition/blob/main/_work/guide_full.txt",
+      "accessedAt": "2026-11-23",
+      "use": "仅用于定位官方文件章节、设计解析规则和交叉检查目录；不得单独作为最终答案依据。该仓库未声明可复用许可证，本项目不复制其题库数据或程序代码。"
     }
   ]
 }
