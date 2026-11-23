@@ -502,17 +502,24 @@
       body.appendChild(explanation);
     }
 
+    var evidenceMap = new Map(ai.evidencePayload.map(function (item) { return [item.id,item]; }));
     if (Array.isArray(data.optionAnalysis) && data.optionAnalysis.length) {
       var analysisDetails = makeElement("details","evidence-details");
-      analysisDetails.appendChild(makeElement("summary","","展开逐项判断"));
+      analysisDetails.appendChild(makeElement("summary","","展开逐项判断与对应证据"));
       data.optionAnalysis.forEach(function (item) {
         var verdict = item.verdict === "supported" ? "支持" : item.verdict === "refuted" ? "排除" : "证据不足";
         analysisDetails.appendChild(makeElement("p","",item.key + " · " + verdict + "：" + item.rationale));
+        (Array.isArray(item.evidenceIds) ? item.evidenceIds : []).forEach(function (id) {
+          var cited = evidenceMap.get(id);
+          if (!cited) return;
+          analysisDetails.appendChild(makeElement("small","option-evidence-ref",
+            "对应证据：" + cited.title + " · 第 " + cited.page + " 页 · [" + cited.authority + "]"));
+        });
       });
       body.appendChild(analysisDetails);
     }
 
-    var evidenceMap = new Map(ai.evidencePayload.map(function (item) { return [item.id,item]; }));
+
     (data.evidenceIds || []).forEach(function (id) {
       var item = evidenceMap.get(id);
       if (!item) return;
