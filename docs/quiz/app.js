@@ -344,6 +344,12 @@
       body.appendChild(details);
     });
 
+    if (apiMessage && /API Key|模型名称|模型 API/.test(apiMessage) && window.quizMindDesktop) {
+      var settingsLink = makeElement("a", "evidence-settings-link", "打开 AI 设置");
+      settingsLink.href = "./settings.html";
+      body.appendChild(settingsLink);
+    }
+
     card.appendChild(body);
     return card;
   }
