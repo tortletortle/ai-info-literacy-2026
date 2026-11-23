@@ -1,56 +1,60 @@
-# QuizMind AI 部署说明（Cloudflare Pages）
+# QuizMind AI 桌面端部署与构建说明
 
-## 目标部署结构
+## 正式交付：Windows 桌面应用
 
-- 静态前端目录：docs/quiz
-- Pages Functions 目录：仓库根目录 functions/
-- API 路径：POST /api/answer
-- 模型密钥只放在 Cloudflare Pages 的服务端环境变量中，不写进浏览器代码或 Git 仓库。
+当前主线为 Electron 桌面端，浏览器静态页面只作为次级预览。构建环境：
 
-## 创建 Pages 项目
+- Windows 10/11 x64
+- Node.js 24.x
+- npm
 
-1. 在 Cloudflare Dashboard 中创建 Pages 项目，并连接本 GitHub 仓库。
-2. 生产分支选择 main（合并本开发 PR 后使用）；预览阶段可选择 web-quiz-v0.1。
-3. Build command 留空。
-4. Build output directory 填写 docs/quiz。
-5. 保留仓库根目录的 functions/ 文件夹，Cloudflare Pages 会据此构建 Functions。
+从仓库根目录运行：
 
-## 配置服务端变量
+~~~powershell
+cd desktop
+npm install
+npm test
+npm run dist:win
+~~~
 
-在 Pages 项目设置的 Variables and Secrets 中添加：
+构建产物位于 desktop/dist/：
 
-| 变量 | 用途 |
-|---|---|
-| LLM_BASE_URL | OpenAI-compatible API 的基础地址，包含版本路径（例如 /v1） |
-| LLM_API_KEY | 模型服务密钥，必须设为 Secret |
-| LLM_MODEL | 服务商提供的模型名称 |
+- QuizMind AI Setup 0.2.0.exe：NSIS 安装包，可选择安装目录并创建快捷方式。
+- QuizMind AI 0.2.0.exe：便携版，无需安装。
 
-不要把密钥写入 docs/quiz/、app.js、HTML、README 或提交记录。
+GitHub Actions 会在桌面代码、资料页面或工作流变更时运行 Windows 构建，并上传两个 EXE 作为 workflow artifacts。
 
-## 上线前安全要求
+## 首次使用
 
-- 个人使用建议在站点/API 前启用 Cloudflare Access，避免匿名访问造成模型额度消耗。
-- 若开放公开访问，必须配置 WAF / Rate Limiting 规则，并在模型供应商侧设置用量告警或预算上限。
-- 当前 Function 限制请求体 100 KB、题干 3000 字、最多 8 个选项和 6 段证据；这些是输入边界，不代替访问控制。
-- 浏览器只发送检索出的短证据片段，不上传完整 PDF；模型密钥只保存在服务端 Secret。
+1. 安装并启动 QuizMind AI。
+2. 进入「AI 设置」，填写 OpenAI-compatible API Base URL、模型 ID 和 API Key。
+3. 远程 API 必须使用 HTTPS；本地模型可使用 localhost HTTP。
+4. API Key 通过系统安全存储加密；测试连接成功后再使用 AI 推理。
+5. 进入「资料整理」，选择 PDF/TXT，核对来源等级和元数据。
+6. 默认来源等级为 C；只有确认文件确实来自所填 A/B 官方来源后，才勾选来源确认并逐题人工审核。
+7. 点击「保存到本机工作区」。知识资料与人工核验题目将直接写入本机。
+8. 回到答题台粘贴题目。没有充分证据时，系统应返回不确定。
 
-## 当前 API 行为
+## 数据位置与备份
 
-- 原题命中：前端本地审核题库优先返回。
-- 原题未命中：前端从已导入的资料库检索证据片段，再调用 /api/answer。
-- 服务端只把题目、选项和有限的证据片段发送给模型。
-- 服务端逐项校验模型的选项判断、答案数量和证据 ID；只接受 A/B 级来源作为最终答案证据，C 级第三方资料不能单独支撑答案。
-- 证据不全、选项未全部分析或模型配置缺失时，系统返回不确定，不会强行输出答案。
-- 当前尚未实现服务端实时网页搜索；题目必须能从导入的资料库中找到证据，才能进入 AI 推理。
+用户数据保存在 Electron app.getPath("userData") 目录下的 workspace.json 与 settings.json。API Key 不以明文写入 settings 文件。
 
-## 本地验证
+目前可通过资料整理页导出候选题库/全文知识库 JSON。整个工作区的一键备份与恢复仍在后续迭代中；在其完成前，建议定期分别导出题库与资料库。
 
-静态页面可用：
+## 次级浏览器预览
+
+从仓库根目录运行：
 
 ~~~bash
 python -m http.server 8000
 ~~~
 
-浏览器打开 http://localhost:8000/docs/quiz/。
+浏览器访问 http://localhost:8000/docs/quiz/。静态预览不具备 Electron 主进程、系统密钥加密和本地 IPC 能力；AI API 路径依赖单独部署的服务端 Function。
 
-Cloudflare Pages Function 需要在 Pages 环境中测试；单纯 Python 静态服务器不会运行 /api/answer。
+## 安全与发布限制
+
+- 当前 Windows 安装包未配置代码签名，Windows SmartScreen 可能显示未知发布者提示。
+- 远程模型使用会产生服务商费用，请在供应商侧设置预算和用量告警。
+- 本地 PDF/TXT 解析不会上传原始文件；仅在调用模型时发送检索出的证据片段。
+- 不要导入包含密码、个人身份信息或其他敏感内容的文件。
+- 物理 Windows 设备上的启动、PDF worker、模型连接和升级路径仍需手工验收。
