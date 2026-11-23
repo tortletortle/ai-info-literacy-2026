@@ -3,7 +3,9 @@
 const { app, BrowserWindow, ipcMain, shell, safeStorage, protocol, net } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { randomUUID } = require("node:crypto");
 const { pathToFileURL } = require("node:url");
+const { normalizeWorkspace } = require("./workspace-schema.cjs");
 const { answerWithEvidence, testProvider, resolveEndpoint } = require("./answer-engine.cjs");
 
 const APP_ID = "com.quizmind.ai";
@@ -41,7 +43,7 @@ async function readJson(filePath, fallback) {
 
 async function writeJsonAtomic(filePath, value) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
-  const tempPath = filePath + ".tmp";
+  const tempPath = filePath + "." + process.pid + "." + randomUUID() + ".tmp";
   await fs.writeFile(tempPath, JSON.stringify(value, null, 2), "utf8");
   await fs.rename(tempPath, filePath);
 }
@@ -112,16 +114,13 @@ async function loadWorkspace() {
 }
 
 async function saveWorkspace(value) {
-  if (!value || typeof value !== "object") throw new Error("工作区数据格式无效。");
-  const questions = Array.isArray(value.questions) ? value.questions : [];
-  const documents = Array.isArray(value.documents) ? value.documents : [];
-  const normalized = { schemaVersion: 1, questions, documents, savedAt: new Date().toISOString() };
-  const serialized = JSON.stringify(normalized);
-  if (Buffer.byteLength(serialized, "utf8") > 50 * 1024 * 1024) {
-    throw new Error("本地工作区超过 50 MB，请拆分资料后导入。");
-  }
+  const normalized = normalizeWorkspace(value);
   await writeJsonAtomic(getUserFile("workspace.json"), normalized);
-  return { ok: true, questionCount: questions.length, documentCount: documents.length };
+  return {
+    ok: true,
+    questionCount: normalized.questions.length,
+    documentCount: normalized.documents.length
+  };
 }
 
 async function readQuizData(fileName) {
