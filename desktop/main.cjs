@@ -6,6 +6,7 @@ const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 const { pathToFileURL } = require("node:url");
 const { normalizeWorkspace } = require("./workspace-schema.cjs");
+const { retrieveEvidence } = require("./retrieval-engine.cjs");
 const { answerWithEvidence, testProvider, resolveEndpoint } = require("./answer-engine.cjs");
 
 const APP_ID = "com.quizmind.ai";
@@ -151,7 +152,15 @@ function registerIpcHandlers() {
 
   ipcMain.handle("answer:run", async (_event, payload) => {
     const settings = await getDecryptedSettings();
-    return answerWithEvidence({ payload: payload || {}, settings });
+    const savedWorkspace = await loadWorkspace();
+    const workspace = normalizeWorkspace(savedWorkspace || { questions: [], documents: [] });
+    const request = payload || {};
+    const evidence = retrieveEvidence(workspace.documents, request);
+    const result = await answerWithEvidence({
+      payload: { ...request, evidence },
+      settings
+    });
+    return { ...result, evidencePayload: evidence };
   });
 
   ipcMain.handle("workspace:load", () => loadWorkspace());
