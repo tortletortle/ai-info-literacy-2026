@@ -2,13 +2,13 @@
   "openapi": "3.1.0",
   "info": {
     "title": "QuizMind Answer API",
-    "version": "0.1.0",
-    "description": "证据优先的竞赛题目解析与答题接口。"
+    "version": "0.2.0",
+    "description": "只依据本地检索证据进行逐选项推理的答题接口。"
   },
   "paths": {
     "/api/answer": {
       "post": {
-        "summary": "解析并回答一段或多段粘贴题目",
+        "summary": "根据导入资料中的证据判断一道客观题",
         "requestBody": {
           "required": true,
           "content": {
@@ -16,32 +16,88 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "text"
+                  "question",
+                  "type",
+                  "options",
+                  "evidence"
                 ],
                 "properties": {
-                  "text": {
+                  "question": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 20000
+                    "maxLength": 3000
                   },
-                  "mode": {
+                  "type": {
                     "type": "string",
                     "enum": [
-                      "auto",
-                      "bank-only",
-                      "research"
-                    ],
-                    "default": "auto"
+                      "single",
+                      "multi",
+                      "judge"
+                    ]
                   },
-                  "maxQuestions": {
+                  "options": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "key",
+                        "text"
+                      ],
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 1000
+                        }
+                      }
+                    }
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 6,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "text"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "sourceId": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 5000
+                        }
+                      }
+                    }
+                  },
+                  "multiAnswerMin": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 20,
-                    "default": 10
+                    "description": "多选题正确项最少数量；不传时默认为 1。"
                   },
-                  "locale": {
-                    "type": "string",
-                    "default": "zh-CN"
+                  "multiAnswerMax": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "多选题正确项最多数量；不传时默认为选项总数。"
                   }
                 }
               }
@@ -50,135 +106,77 @@
         },
         "responses": {
           "200": {
-            "description": "逐题返回答案、状态与证据",
+            "description": "已回答或证据不足",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "required": [
-                    "requestId",
-                    "results",
-                    "engineVersion"
+                    "status",
+                    "answerKeys",
+                    "explanation",
+                    "confidence",
+                    "evidenceIds",
+                    "optionAnalysis",
+                    "warnings"
                   ],
                   "properties": {
-                    "requestId": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "answered",
+                        "uncertain"
+                      ]
+                    },
+                    "answerKeys": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "explanation": {
                       "type": "string"
                     },
-                    "engineVersion": {
-                      "type": "string"
+                    "confidence": {
+                      "type": "string",
+                      "enum": [
+                        "high",
+                        "medium",
+                        "low"
+                      ]
                     },
-                    "results": {
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "optionAnalysis": {
                       "type": "array",
                       "items": {
                         "type": "object",
-                        "required": [
-                          "index",
-                          "status",
-                          "question",
-                          "evidence",
-                          "warnings"
-                        ],
                         "properties": {
-                          "index": {
-                            "type": "integer"
-                          },
-                          "status": {
-                            "type": "string",
-                            "enum": [
-                              "matched",
-                              "researched",
-                              "ambiguous",
-                              "uncertain"
-                            ]
-                          },
-                          "question": {
+                          "key": {
                             "type": "string"
                           },
-                          "type": {
+                          "verdict": {
                             "type": "string",
                             "enum": [
-                              "single",
-                              "multi",
-                              "judge",
-                              "unknown"
+                              "supported",
+                              "refuted",
+                              "insufficient"
                             ]
                           },
-                          "answer": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "key": {
-                                  "type": "string"
-                                },
-                                "text": {
-                                  "type": "string"
-                                }
-                              }
-                            }
-                          },
-                          "explanation": {
+                          "rationale": {
                             "type": "string"
-                          },
-                          "confidence": {
-                            "type": "string",
-                            "enum": [
-                              "high",
-                              "medium",
-                              "low"
-                            ]
-                          },
-                          "route": {
-                            "type": "string",
-                            "enum": [
-                              "exact-bank",
-                              "semantic-bank",
-                              "knowledge-retrieval",
-                              "live-research",
-                              "abstain"
-                            ]
-                          },
-                          "evidence": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "sourceId": {
-                                  "type": "string"
-                                },
-                                "title": {
-                                  "type": "string"
-                                },
-                                "url": {
-                                  "type": "string"
-                                },
-                                "quote": {
-                                  "type": "string"
-                                },
-                                "page": {
-                                  "type": "integer"
-                                },
-                                "accessedAt": {
-                                  "type": "string"
-                                },
-                                "authority": {
-                                  "type": "string",
-                                  "enum": [
-                                    "A",
-                                    "B",
-                                    "C"
-                                  ]
-                                }
-                              }
-                            }
-                          },
-                          "warnings": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
                           }
                         }
+                      }
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
                       }
                     }
                   }
@@ -187,10 +185,13 @@
             }
           },
           "400": {
-            "description": "输入无效或题目数量超限"
+            "description": "请求格式无效"
+          },
+          "502": {
+            "description": "模型供应商请求失败"
           },
           "503": {
-            "description": "研究/模型服务未配置或暂时不可用"
+            "description": "服务端模型密钥或模型名称未配置"
           }
         }
       }
