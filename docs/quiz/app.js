@@ -324,12 +324,6 @@
     charCount.textContent = Array.from(input.value).length + " 字";
   });
 
-  $("clearBtn") && $("clearBtn").addEventListener("click", function () {
-    input.value = "";
-    charCount.textContent = "0 字";
-    input.focus();
-  });
-
   importBtn.addEventListener("click", function () { bankFile.click(); });
   bankFile.addEventListener("change", function () {
     var file = bankFile.files && bankFile.files[0];
