@@ -1,6 +1,6 @@
 # QuizMind AI · Desktop Edition
 
-桌面端是当前主线。请从仓库根目录进入 desktop，按 desktop/README.md 安装依赖、运行测试和构建 Windows 程序。
+桌面端是当前主线（开发分支：desktop-app-v0.1）。请从仓库根目录进入 desktop，按 desktop/README.md 安装依赖、运行测试和构建 Windows 程序。
 
 ## 当前产品形态
 
