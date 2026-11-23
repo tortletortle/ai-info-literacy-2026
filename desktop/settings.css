@@ -22,3 +22,5 @@
 .local-panel li { margin: 7px 0; }
 .app-version { color: var(--subtle); font-size: 10px; }
 @media(max-width:620px){.settings-panel{padding:16px}.settings-section-title{align-items:flex-start;flex-direction:column}.settings-intro{padding-top:34px}}
+.back-link { color: var(--green); text-decoration: none; font-size: 12px; font-weight: 650; }
+.back-link:hover { text-decoration: underline; }
