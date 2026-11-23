@@ -1,0 +1,413 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-23",
+  "sourceId": "SRC-001",
+  "categories": [
+    {
+      "id": "AI",
+      "name": "AI 素养",
+      "from": 1,
+      "to": 7
+    },
+    {
+      "id": "GOV",
+      "name": "政府开放信息",
+      "from": 8,
+      "to": 16
+    },
+    {
+      "id": "LEARN",
+      "name": "实用学习资源",
+      "from": 17,
+      "to": 20
+    },
+    {
+      "id": "ACADEMIC",
+      "name": "学术信息资源",
+      "from": 21,
+      "to": 25
+    },
+    {
+      "id": "SEARCH",
+      "name": "信息检索系统",
+      "from": 26,
+      "to": 30
+    },
+    {
+      "id": "RETRIEVAL",
+      "name": "信息检索理论与技术",
+      "from": 31,
+      "to": 37
+    },
+    {
+      "id": "KM",
+      "name": "知识管理工具",
+      "from": 38,
+      "to": 41
+    },
+    {
+      "id": "WRITING",
+      "name": "学术写作",
+      "from": 42,
+      "to": 45
+    },
+    {
+      "id": "RESEARCH",
+      "name": "科研工具",
+      "from": 46,
+      "to": 50
+    }
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "category": "AI 素养",
+      "name": "AI 基础知识与伦理规范",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 2,
+      "category": "AI 素养",
+      "name": "AI 学习资源的获取与利用",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 3,
+      "category": "AI 素养",
+      "name": "通用 AI 工具认知与应用",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 4,
+      "category": "AI 素养",
+      "name": "办公场景下的 AI 工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 5,
+      "category": "AI 素养",
+      "name": "科研场景下的 AI 工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 6,
+      "category": "AI 素养",
+      "name": "多模态 AI 工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 7,
+      "category": "AI 素养",
+      "name": "AI 开源与开放数据资源的获取与利用",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 8,
+      "category": "政府开放信息",
+      "name": "思政信息资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 9,
+      "category": "政府开放信息",
+      "name": "开放数据资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 10,
+      "category": "政府开放信息",
+      "name": "法律信息资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 11,
+      "category": "政府开放信息",
+      "name": "标准与商标信息资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 12,
+      "category": "政府开放信息",
+      "name": "专利和地理标志",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 13,
+      "category": "政府开放信息",
+      "name": "反诈防骗信息资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 14,
+      "category": "政府开放信息",
+      "name": "医卫信息查询",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 15,
+      "category": "政府开放信息",
+      "name": "文教信息查询",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 16,
+      "category": "政府开放信息",
+      "name": "证书资格查询",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 17,
+      "category": "实用学习资源",
+      "name": "在线开放课程资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 18,
+      "category": "实用学习资源",
+      "name": "开放平台中的学习资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 19,
+      "category": "实用学习资源",
+      "name": "免费电子书",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 20,
+      "category": "实用学习资源",
+      "name": "国家图书馆免费数字资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 21,
+      "category": "学术信息资源",
+      "name": "期刊论文的检索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 22,
+      "category": "学术信息资源",
+      "name": "学术会议论文及会议信息的检索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 23,
+      "category": "学术信息资源",
+      "name": "学位论文及资源获取",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 24,
+      "category": "学术信息资源",
+      "name": "OA、预印本及其他免费资源",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 25,
+      "category": "学术信息资源",
+      "name": "科研项目数据库",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 26,
+      "category": "信息检索系统",
+      "name": "学术搜索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 27,
+      "category": "信息检索系统",
+      "name": "图片搜索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 28,
+      "category": "信息检索系统",
+      "name": "网址导航",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 29,
+      "category": "信息检索系统",
+      "name": "网络指数",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 30,
+      "category": "信息检索系统",
+      "name": "馆藏查询系统",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 31,
+      "category": "信息检索理论与技术",
+      "name": "高级检索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 32,
+      "category": "信息检索理论与技术",
+      "name": "布尔逻辑检索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 33,
+      "category": "信息检索理论与技术",
+      "name": "截词检索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 34,
+      "category": "信息检索理论与技术",
+      "name": "精确与模糊匹配",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 35,
+      "category": "信息检索理论与技术",
+      "name": "结果筛选",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 36,
+      "category": "信息检索理论与技术",
+      "name": "字段限制检索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 37,
+      "category": "信息检索理论与技术",
+      "name": "搜索引擎的检索语法和高级搜索",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 38,
+      "category": "知识管理工具",
+      "name": "思维导图、笔记软件、问卷调查",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 39,
+      "category": "知识管理工具",
+      "name": "OFFICE 插件和浏览器插件",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 40,
+      "category": "知识管理工具",
+      "name": "截图与录屏",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 41,
+      "category": "知识管理工具",
+      "name": "PDF 文件处理",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 42,
+      "category": "学术写作",
+      "name": "学术评价与投稿选刊",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 43,
+      "category": "学术写作",
+      "name": "学术伦理",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 44,
+      "category": "学术写作",
+      "name": "参考文献著录格式",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 45,
+      "category": "学术写作",
+      "name": "论文排版",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 46,
+      "category": "科研工具",
+      "name": "文献管理工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 47,
+      "category": "科研工具",
+      "name": "文献追踪工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 48,
+      "category": "科研工具",
+      "name": "数据处理工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 49,
+      "category": "科研工具",
+      "name": "数据可视化工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    },
+    {
+      "id": 50,
+      "category": "科研工具",
+      "name": "文献可视化工具",
+      "sourceId": "SRC-001",
+      "status": "catalogued"
+    }
+  ]
+}
