@@ -179,3 +179,5 @@ button { cursor: pointer; }
 .evidence-settings-link:hover { text-decoration: underline; }
 
 .option-evidence-ref { display: block; margin: 3px 0 7px 18px; color: var(--subtle); font-size: 10px; line-height: 1.5; }
+
+.option-evidence-note { display: block; margin-top: 7px; color: var(--subtle); font-size: 10px; line-height: 1.5; }
