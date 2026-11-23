@@ -66,12 +66,13 @@
       explanation: String(q.explanation || ""),
       source: q.source && typeof q.source === "object" ? {
         id: String(q.source.id || ""),
+        authority: ["A","B","C"].indexOf(q.source.authority) >= 0 ? q.source.authority : "C",
         title: String(q.source.title || "未注明来源"),
         url: String(q.source.url || ""),
         updatedAt: String(q.source.updatedAt || ""),
         page: Number.isFinite(Number(q.source.page)) ? Number(q.source.page) : null,
         quote: String(q.source.quote || "")
-      } : { id: "", title: "未注明来源", url: "", updatedAt: "", page: null, quote: "" },
+      } : { id: "", authority: "C", title: "未注明来源", url: "", updatedAt: "", page: null, quote: "" },
       module: q.module && typeof q.module === "object" ? {
         id: Number(q.module.id) || 0,
         category: String(q.module.category || ""),
@@ -91,6 +92,7 @@
         id:String(doc.id || ("DOC-" + (index + 1))),
         title:String(source.title || doc.title || meta.name || "未命名资料"),
         sourceId:String(source.id || doc.sourceId || meta.sourceId || ""),
+        authority:["A","B","C"].indexOf(source.authority || doc.authority || meta.authority) >= 0 ? (source.authority || doc.authority || meta.authority) : "C",
         sourceUrl:String(source.url || doc.sourceUrl || meta.sourceUrl || ""),
         revision:String(source.updatedAt || doc.revision || meta.revision || ""),
         pages:doc.pages.map(function (page, pageIndex) {
@@ -311,7 +313,7 @@
 
     evidence.forEach(function (item) {
       var details = makeElement("details", "evidence-details");
-      details.appendChild(makeElement("summary", "", item.doc.title + " · 第 " + item.page + " 页 · 相关度 " + Math.round(item.score * 100) + "%"));
+      details.appendChild(makeElement("summary", "", "[" + item.doc.authority + "] " + item.doc.title + " · 第 " + item.page + " 页 · 相关度 " + Math.round(item.score * 100) + "%"));
       details.appendChild(makeElement("p", "", item.text));
       if (item.doc.sourceUrl && /^https:\/\/[^ ]+$/i.test(item.doc.sourceUrl)) {
         var link = makeElement("a", "", "打开来源网页");
@@ -401,6 +403,7 @@
         url:item.doc.sourceUrl,
         page:item.page,
         sourceId:item.doc.sourceId,
+        authority:item.doc.authority,
         text:item.text
       };
     });
@@ -482,7 +485,7 @@
       var item = evidenceMap.get(id);
       if (!item) return;
       var details = makeElement("details","evidence-details");
-      details.appendChild(makeElement("summary","",item.title + " · 第 " + item.page + " 页"));
+      details.appendChild(makeElement("summary","", "[" + (item.authority || "C") + "] " + item.title + " · 第 " + item.page + " 页"));
       details.appendChild(makeElement("p","",item.text));
       if (item.url && /^https:\/\/[^ ]+$/i.test(item.url)) {
         var link = makeElement("a","","打开来源网页");
