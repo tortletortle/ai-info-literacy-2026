@@ -21,6 +21,8 @@
       </a>
       <div class="top-actions">
         <span class="bank-status"><i class="status-dot"></i><span id="bankCount">正在读取题库</span></span>
+        <a class="button button-quiet" href="./admin.html">资料库</a>
+        <a class="button button-quiet" href="./settings.html">AI 设置</a>
         <button class="button button-quiet" id="importBtn" type="button">导入数据</button>
         <input id="bankFile" type="file" accept=".json,application/json" hidden>
       </div>
@@ -30,7 +32,7 @@
       <section class="intro">
         <p class="eyebrow">AI + INFORMATION LITERACY</p>
         <h1>把题目贴进来，<br class="mobile-break">答案与依据一起给你。</h1>
-        <p class="intro-copy">优先匹配经过审核的题目。遇到新题，系统会明确标记未命中，不会把猜测包装成标准答案。</p>
+        <p class="intro-copy">Windows 桌面工作台 · 优先匹配本地审核题库；未命中时检索本地资料并进行证据约束推理。</p>
       </section>
 
       <section class="workspace" aria-labelledby="inputTitle">
@@ -76,13 +78,13 @@ D. XOR
 
       <section class="version-note">
         <span class="note-icon" aria-hidden="true">i</span>
-        <p><strong>V0.1 当前能力：</strong>已搭建网页答题台、本地审核题库导入和题目相似匹配。已支持从导入资料中检索证据，并在服务端模型配置后进行逐项推理；实时网页查证尚未接入。无证据时不会自动编造答案。正式比赛使用前，必须核对该赛段是否允许 AI 辅助答题。</p>
+        <p><strong>桌面版 V0.1：</strong>题库和资料保存在本机；模型密钥通过系统安全存储加密。AI 推理只使用 A/B 级官方证据，证据不足时拒绝猜测。正式比赛使用前，必须核对该赛段是否允许 AI 辅助答题。</p>
       </section>
     </main>
 
     <footer class="footer">
       <span>QuizMind AI</span>
-      <span><a href="./admin.html">资料整理工具</a> · 题库来源可追溯 · 答案按选项内容核对</span>
+      <span><a href="./admin.html">资料整理</a> · <a href="./settings.html">AI 设置</a> · 本地优先 · 证据可追溯</span>
     </footer>
   </div>
 </body>
