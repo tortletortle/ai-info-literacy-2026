@@ -184,7 +184,6 @@ function registerAppProtocol() {
 }
 
 function createMainWindow() {
-  const quizDirectory = getQuizDirectory();
   mainWindow = new BrowserWindow({
     width: 1320,
     height: 900,
