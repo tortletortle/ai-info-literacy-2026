@@ -9,6 +9,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 const SYSTEM_PROMPT = [
   "你是 QuizMind 的证据约束型客观题答题引擎。",
   "只能使用用户提供的 evidence 数组作答，不得使用模型记忆补充事实，不得虚构来源、页码或引文。",
+  "A 级主办方来源和 B 级高校官方来源可作为答案依据；C 级第三方来源只能作为线索，不能单独支撑最终答案。",
   "必须逐项分析每个选项，verdict 只能是 supported、refuted、insufficient。",
   "单选题必须恰好一个 supported，其他选项必须 refuted；只要存在 insufficient 就返回 uncertain。",
   "多选题必须完整判断所有选项；按请求给出的 multiAnswerMin / multiAnswerMax 约束正确项数量，未给出时范围为 1 到选项总数；任何选项 insufficient 都返回 uncertain。",
@@ -43,7 +44,7 @@ function parseModelJson(raw) {
 
 function validateModelResult(result, type, options, evidence, multiMin, multiMax) {
   const validKeys = new Set(options.map((option) => option.key));
-  const validEvidenceIds = new Set(evidence.map((item) => item.id));
+  const validEvidenceIds = new Set(evidence.filter((item) => item.authority === "A" || item.authority === "B").map((item) => item.id));
   const analysis = Array.isArray(result.optionAnalysis) ? result.optionAnalysis : [];
   const byKey = new Map();
   for (const item of analysis) {
@@ -136,6 +137,7 @@ export async function onRequestPost({ request, env }) {
     url: String(item.url || "").slice(0, 1000),
     page: Number(item.page) || null,
     sourceId: String(item.sourceId || ""),
+    authority: ["A","B","C"].includes(item.authority) ? item.authority : "C",
     text: String(item.text || "").slice(0, 5000)
   })) : [];
 
@@ -146,6 +148,9 @@ export async function onRequestPost({ request, env }) {
   }
   if (!evidence.length || evidence.every((item) => !item.text.trim())) {
     return json(uncertain("没有检索到可供核验的资料证据。"), 200);
+  }
+  if (!evidence.some((item) => item.authority === "A" || item.authority === "B")) {
+    return json(uncertain("当前只有第三方线索，不能作为标准答案依据。"), 200);
   }
 
   const baseUrl = String(env.LLM_BASE_URL || "").trim().replace(/\/+$/, "");
