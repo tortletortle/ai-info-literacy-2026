@@ -3,6 +3,7 @@
 
   var STORAGE_KEY = "quizmind.local-question-bank.v1";
   var bank = [];
+  var knowledgeDocs = [];
   var $ = function (id) { return document.getElementById(id); };
 
   var form = $("answerForm");
@@ -80,9 +81,42 @@
     };
   }
 
+  function validateKnowledgeDocs(docs, meta) {
+    if (!Array.isArray(docs)) throw new Error("知识库 JSON 缺少 documents 数组");
+    meta = meta && typeof meta === "object" ? meta : {};
+    return docs.map(function (doc, index) {
+      if (!doc || !Array.isArray(doc.pages)) throw new Error("第 " + (index + 1) + " 份资料缺少 pages 数组");
+      var source = doc.source && typeof doc.source === "object" ? doc.source : {};
+      return {
+        id:String(doc.id || ("DOC-" + (index + 1))),
+        title:String(source.title || meta.name || "未命名资料"),
+        sourceId:String(source.id || meta.sourceId || ""),
+        sourceUrl:String(source.url || meta.sourceUrl || ""),
+        revision:String(source.updatedAt || meta.revision || ""),
+        pages:doc.pages.map(function (page, pageIndex) {
+          return {
+            page:Number(page.page) || (pageIndex + 1),
+            text:String(page.text || "")
+          };
+        }).filter(function (page) { return page.text.trim().length > 0; })
+      };
+    });
+  }
+
+  function renderBankStatus() {
+    var verified = bank.filter(function (q) { return q.reviewStatus === "verified"; }).length;
+    var pageCount = knowledgeDocs.reduce(function (total, doc) { return total + doc.pages.length; }, 0);
+    bankCount.textContent = "审核题目 " + verified + " 道 · 资料页 " + pageCount + " 页";
+  }
+
+  function setKnowledgeDocs(docs, meta) {
+    knowledgeDocs = validateKnowledgeDocs(docs || [], meta || {});
+    renderBankStatus();
+  }
+
   function setBank(questions) {
     bank = questions.map(validateQuestion);
-    bankCount.textContent = "审核题目 " + bank.filter(function (q) { return q.reviewStatus === "verified"; }).length + " 道";
+    renderBankStatus();
   }
 
   async function loadBank() {
@@ -90,7 +124,13 @@
       var saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         var parsedSaved = JSON.parse(saved);
-        setBank(Array.isArray(parsedSaved) ? parsedSaved : parsedSaved.questions || []);
+        if (Array.isArray(parsedSaved)) {
+          setBank(parsedSaved);
+          setKnowledgeDocs([]);
+        } else {
+          setBank(parsedSaved.questions || []);
+          setKnowledgeDocs(parsedSaved.documents || [], parsedSaved.meta || {});
+        }
         return;
       }
     } catch (error) {
@@ -102,8 +142,10 @@
       if (!response.ok) throw new Error("题库文件读取失败");
       var payload = await response.json();
       setBank(Array.isArray(payload) ? payload : payload.questions || []);
+      if (!Array.isArray(payload)) setKnowledgeDocs(payload.documents || [], payload.meta || {});
     } catch (error) {
       bank = [];
+      knowledgeDocs = [];
       bankCount.textContent = "题库暂不可用";
       console.error(error);
     }
@@ -204,22 +246,85 @@
     return node;
   }
 
-  function renderMiss(parsed, index, reason) {
+  function queryCoverage(query, text) {
+    var queryGrams = grams(query);
+    var textGrams = grams(text);
+    if (!queryGrams.size || !textGrams.size) return 0;
+    var overlap = 0;
+    queryGrams.forEach(function (gram) { if (textGrams.has(gram)) overlap++; });
+    return overlap / queryGrams.size;
+  }
+
+  function retrieveEvidence(parsed) {
+    if (!knowledgeDocs.length) return [];
+    var query = parsed.stem + " " + parsed.options.map(function (option) { return option.text; }).join(" ");
+    var evidence = [];
+    knowledgeDocs.forEach(function (doc) {
+      doc.pages.forEach(function (page) {
+        var text = page.text.replace(/\s+/g," ").trim();
+        var windowSize = 520;
+        var step = 360;
+        if (text.length <= windowSize) {
+          var score = queryCoverage(query,text);
+          if (score >= 0.12) evidence.push({doc:doc,page:page.page,text:text,score:score});
+          return;
+        }
+        for (var offset = 0; offset < text.length; offset += step) {
+          var chunk = text.slice(offset,offset + windowSize);
+          var chunkScore = queryCoverage(query,chunk);
+          if (chunkScore >= 0.12) evidence.push({doc:doc,page:page.page,text:chunk,score:chunkScore});
+        }
+      });
+    });
+    evidence.sort(function (a,b) { return b.score-a.score; });
+    var unique = [];
+    var seen = new Set();
+    evidence.forEach(function (item) {
+      var key = item.doc.id + ":" + item.page;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(item);
+      }
+    });
+    return unique.slice(0,3);
+  }
+
+  function renderMiss(parsed, index, reason, evidence) {
+    evidence = evidence || [];
     var card = makeElement("article", "result-card");
     var head = makeElement("div", "result-card-head");
     head.appendChild(makeElement("strong", "", "第 " + (index + 1) + " 题"));
-    head.appendChild(makeElement("span", "status-pill status-miss", "暂未命中"));
+    head.appendChild(makeElement("span", "status-pill status-miss", "原题未命中"));
     card.appendChild(head);
     var body = makeElement("div", "result-body");
     body.appendChild(makeElement("p", "result-question", parsed.raw));
     var box = makeElement("div", "miss-box");
-    box.appendChild(makeElement("strong", "", reason || "当前审核题库中没有足够可靠的匹配结果。"));
-    box.appendChild(makeElement("p", "", "本版本尚未连接 AI 知识检索服务，因此不会猜测答案。请核对题干，或先导入经过审核的题库。"));
+    if (evidence.length) {
+      box.appendChild(makeElement("strong", "", "原题未命中，但资料库找到相关片段。"));
+      box.appendChild(makeElement("p", "", "以下内容是检索线索，不是自动判定的标准答案；当前版本尚未连接 AI 推理服务，请按原文核对各个选项。"));
+    } else {
+      box.appendChild(makeElement("strong", "", reason || "当前审核题库中没有足够可靠的匹配结果。"));
+      box.appendChild(makeElement("p", "", "本版本尚未连接 AI 知识检索服务，因此不会猜测答案。请核对题干，或导入经过审核的题库与资料库。"));
+    }
     body.appendChild(box);
+
+    evidence.forEach(function (item) {
+      var details = makeElement("details", "evidence-details");
+      details.appendChild(makeElement("summary", "", item.doc.title + " · 第 " + item.page + " 页 · 相关度 " + Math.round(item.score * 100) + "%"));
+      details.appendChild(makeElement("p", "", item.text));
+      if (item.doc.sourceUrl && /^https:\/\/[^ ]+$/i.test(item.doc.sourceUrl)) {
+        var link = makeElement("a", "", "打开来源网页");
+        link.href = item.doc.sourceUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        details.appendChild(link);
+      }
+      body.appendChild(details);
+    });
+
     card.appendChild(body);
     return card;
   }
-
   function renderHit(match, parsed, index, ambiguous) {
     var q = match.question;
     var mapped = mapAnswerToInputOptions(q, parsed);
@@ -293,7 +398,7 @@
       var parsed = parseQuestion(block);
       if (!parsed.stem) {
         missCount++;
-        results.appendChild(renderMiss(parsed, index, "未能识别题干，请检查粘贴内容。"));
+        results.appendChild(renderMiss(parsed, index, "未能识别题干，请检查粘贴内容。", []));
         return;
       }
       var ranked = rankMatches(parsed);
@@ -302,7 +407,7 @@
       var threshold = parsed.options.length ? 0.68 : 0.76;
       if (!best || best.score < threshold) {
         missCount++;
-        results.appendChild(renderMiss(parsed, index));
+        results.appendChild(renderMiss(parsed, index, null, retrieveEvidence(parsed)));
         return;
       }
       var ambiguous = !!(second && second.score >= threshold && best.score - second.score < 0.045 && !best.exact);
@@ -348,19 +453,25 @@
     reader.onload = function () {
       try {
         var payload = JSON.parse(String(reader.result || ""));
-        var questions = Array.isArray(payload) ? payload : payload.questions;
-        if (!Array.isArray(questions)) throw new Error("JSON 顶层必须包含 questions 数组");
-        var checked = questions.map(validateQuestion);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
-        setBank(checked);
-        resultSummary.textContent = "已导入 " + checked.length + " 道题";
+        var importedQuestions = Array.isArray(payload) ? payload : payload.questions;
+        var importedDocuments = !Array.isArray(payload) && Array.isArray(payload.documents) ? payload.documents : null;
+        if (!Array.isArray(importedQuestions) && !importedDocuments) {
+          throw new Error("JSON 顶层必须包含 questions 或 documents 数组");
+        }
+        if (Array.isArray(importedQuestions)) bank = importedQuestions.map(validateQuestion);
+        if (importedDocuments) knowledgeDocs = validateKnowledgeDocs(importedDocuments,payload.meta || {});
+        localStorage.setItem(STORAGE_KEY,JSON.stringify({questions:bank,documents:knowledgeDocs}));
+        renderBankStatus();
+        resultSummary.textContent = "数据导入成功";
         results.replaceChildren();
         var message = makeElement("div", "empty-state");
-        message.appendChild(makeElement("strong", "", "题库导入成功"));
-        message.appendChild(makeElement("p", "", "当前浏览器已载入 " + checked.length + " 道题，其中 " + checked.filter(function (q) { return q.reviewStatus === "verified"; }).length + " 道已审核题目可用于答题。"));
+        message.appendChild(makeElement("strong", "", "数据导入成功"));
+        var verifiedCount = bank.filter(function (q) { return q.reviewStatus === "verified"; }).length;
+        var pageCount = knowledgeDocs.reduce(function (total, doc) { return total + doc.pages.length; }, 0);
+        message.appendChild(makeElement("p", "", "当前浏览器已载入 " + verifiedCount + " 道已审核题目和 " + pageCount + " 页资料。未审核题目不会作为标准答案。"));
         results.appendChild(message);
       } catch (error) {
-        window.alert("题库导入失败：" + error.message);
+        window.alert("数据导入失败：" + error.message);
       }
       bankFile.value = "";
     };
