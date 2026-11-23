@@ -633,25 +633,42 @@
         if (!Array.isArray(importedQuestions) && !importedDocuments) {
           throw new Error("JSON 顶层必须包含 questions 或 documents 数组");
         }
-        var importedQuestionCount = 0;
-        var importedDocumentCount = 0;
-        if (Array.isArray(importedQuestions)) {
-          var questionMap = new Map(bank.map(function (question) { return [question.id,question]; }));
-          importedQuestions.map(validateQuestion).forEach(function (question) {
-            questionMap.set(question.id,question);
-            importedQuestionCount++;
-          });
-          bank = Array.from(questionMap.values());
+        if (!Array.isArray(payload) && payload.questions != null && !Array.isArray(payload.questions)) {
+          throw new Error("questions 字段必须是数组");
         }
-        if (importedDocuments) {
-          var documentMap = new Map(knowledgeDocs.map(function (document) { return [document.id,document]; }));
-          validateKnowledgeDocs(importedDocuments,payload.meta || {}).forEach(function (document) {
-            documentMap.set(document.id,document);
-            importedDocumentCount++;
-          });
-          knowledgeDocs = Array.from(documentMap.values());
+        if (!Array.isArray(payload) && payload.documents != null && !Array.isArray(payload.documents)) {
+          throw new Error("documents 字段必须是数组");
         }
-        await persistWorkspaceData();
+
+        var validatedQuestions = Array.isArray(importedQuestions)
+          ? importedQuestions.map(validateQuestion)
+          : [];
+        var validatedDocuments = importedDocuments
+          ? validateKnowledgeDocs(importedDocuments,payload.meta || {})
+          : [];
+        var importedQuestionCount = validatedQuestions.length;
+        var importedDocumentCount = validatedDocuments.length;
+
+        var questionMap = new Map(bank.map(function (question) { return [question.id,question]; }));
+        validatedQuestions.forEach(function (question) {
+          questionMap.set(question.id,question);
+        });
+        var documentMap = new Map(knowledgeDocs.map(function (document) { return [document.id,document]; }));
+        validatedDocuments.forEach(function (document) {
+          documentMap.set(document.id,document);
+        });
+
+        var previousBank = bank;
+        var previousDocuments = knowledgeDocs;
+        bank = Array.from(questionMap.values());
+        knowledgeDocs = Array.from(documentMap.values());
+        try {
+          await persistWorkspaceData();
+        } catch (saveError) {
+          bank = previousBank;
+          knowledgeDocs = previousDocuments;
+          throw saveError;
+        }
         renderBankStatus();
         resultSummary.textContent = "数据合并成功";
         results.replaceChildren();
