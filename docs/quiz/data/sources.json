@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-23",
+  "authorityPolicy": {
+    "A": "赛事主办方/官方平台原始资料，可作为最终答案依据。",
+    "B": "高校图书馆等学校官方通知及其附件，可用于交叉核验和定位官方材料。",
+    "C": "第三方整理、转载、社区讨论，仅作为线索，不单独支撑标准答案。"
+  },
+  "sources": [
+    {
+      "id": "SRC-001",
+      "title": "2026 年大学生“AI+信息素养”大赛命题范围",
+      "publisher": "大学生“AI+信息素养”大赛官方平台",
+      "authority": "A",
+      "type": "dynamic-official-platform",
+      "url": "https://csc.xxsuyang.com/Knowledge",
+      "accessedAt": "2026-11-23",
+      "revision": "动态页面；静态抓取仅返回 JavaScript 加载提示，具体内容需在浏览器端核验。",
+      "use": "50 个知识模块、官方学习资源、样题与命题范围的首要核验入口。"
+    },
+    {
+      "id": "SRC-002",
+      "title": "关于启动 2026 年大学生“AI+信息素养”大赛的通知",
+      "publisher": "西南石油大学图书馆",
+      "authority": "B",
+      "type": "university-library-notice-with-official-document-attachment",
+      "url": "https://lib.swpu.edu.cn/1849.8080/noticex/20260901.html",
+      "publishedAt": "2026-08-31",
+      "accessedAt": "2026-11-23",
+      "attachment": "2026 年大学生“AI+信息素养”大赛客观题命题范围及备赛建议.pdf",
+      "use": "核验赛制时间与官方命题范围附件的公开入口；附件具体修订版本仍需读取 PDF 首页/元数据确认。"
+    },
+    {
+      "id": "SRC-003",
+      "title": "“智信杯”第五届辽宁省普通高校大学生信息素养大赛暨 2026 年全国大学生“AI+信息素养”大赛校内选拔赛正式启动",
+      "publisher": "沈阳工业大学图书馆",
+      "authority": "B",
+      "type": "university-library-notice",
+      "url": "https://library.sut.edu.cn/info/1312/5991.htm",
+      "publishedAt": "2026-09-15",
+      "accessedAt": "2026-11-23",
+      "use": "交叉核验 50 个知识模块、客观题题型与评分结构、合作数据库和平台模拟训练说明。"
+    }
+  ]
+}
