@@ -411,5 +411,8 @@
     }
   ],
   "extractionReference": "SRC-004",
-  "extractionNote": "模块名称按公开的官方文件文字转录整理；在将模块内容用于标准答案前，仍需对照 SRC-002 附件原 PDF 核验修订版本。"
+  "extractionNote": "模块名称按公开的官方文件文字转录整理；在将模块内容用于标准答案前，仍需对照 SRC-002 附件原 PDF 核验修订版本。",
+  "sourceRevision": "unverified",
+  "verificationStatus": "provisional",
+  "verificationNote": "当前 50 个模块名称与分类尚未逐页对照官方附件原件。SRC-003 的高校图书馆通知明确引用 2026.7.17 修订版；SRC-004 的第三方页面声称 2026.9.10 修订版，但该修订尚未取得官方原件。任何模块均不得作为已核验事实使用，直至完成官方 PDF 逐项审计。"
 }
