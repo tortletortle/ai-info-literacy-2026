@@ -25,7 +25,7 @@
 - `data/modules.json`：官方命题范围的 9 大类、50 个知识模块目录。
 - `data/sources.json`：官方平台与高校图书馆公开通知的来源登记、权威等级和证据使用规则（含附件访问限制记录）。
 - `data/competition-format.json`：由高校图书馆官方通知交叉核验的校内选拔赛题型与分值结构（不外推到其他赛段）。
-- `api-contract.json`：后续服务端答题 API 的请求/响应契约。
+- `api-contract.json`：服务端答题 API 的请求/响应契约；`functions/api/answer.js` 已提供 Cloudflare Pages Function 实现。
 - `ARCHITECTURE.md`：证据优先答题流程、来源等级、多选题判定与验收指标。
 
 尚未实现：
@@ -35,9 +35,9 @@
 
 - 自动抓取网页/PDF/课件。
 - OCR 图片识别。
-- LLM 未知题推理。
 - 实时网页查证。
 - 多用户云端题库同步。
+- 服务端模型接口尚需部署并配置密钥，未完成云端联调。
 
 未命中时不猜答案。这是有意设计的防幻觉策略，不是答题失败后静默返回随机结果。
 
@@ -100,4 +100,5 @@ http://localhost:8000/docs/quiz/
 2. 编写 PDF/HTML 文档解析器。
 3. 从官方材料中抽取候选知识点与题目。
 4. 为每个答案保存证据片段、来源 URL、版本日期和审核状态。
-5. 再接入服务端 AI 检索与实时查证。
+5. 部署 Cloudflare Pages Function 并配置 OpenAI-compatible 模型服务端密钥。
+6. 加入官方域名优先的实时网页搜索与答案证据复核。
