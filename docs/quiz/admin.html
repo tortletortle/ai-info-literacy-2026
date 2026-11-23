@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f5">
+  <title>QuizMind AI · 资料整理</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./admin.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="./admin.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="返回 QuizMind AI">
+        <span class="brand-mark">Q</span>
+        <span class="brand-copy"><strong>QuizMind <em>AI</em></strong><small>资料整理工具</small></span>
+      </a>
+      <a class="back-link" href="./">返回答题台 <span aria-hidden="true">→</span></a>
+    </header>
+
+    <main>
+      <section class="admin-intro">
+        <p class="eyebrow">KNOWLEDGE INGESTION</p>
+        <h1>把官方资料变成<br class="mobile-break">可审核的候选题库。</h1>
+        <p>选择可复制文本的 PDF 或 TXT。文件只在当前浏览器本地解析，不会上传。抽取结果默认是待审核状态，核对原文后才能加入正式题库。</p>
+      </section>
+
+      <section class="import-panel">
+        <div class="field-grid">
+          <label class="field field-wide">资料名称
+            <input id="sourceTitle" type="text" value="2026 年大学生“AI+信息素养”大赛客观题命题范围及备赛建议">
+          </label>
+          <label class="field field-wide">来源网页
+            <input id="sourceUrl" type="url" value="https://lib.swpu.edu.cn/1849.8080/noticex/20260901.html">
+          </label>
+          <label class="field">来源编号
+            <input id="sourceId" type="text" value="SRC-002">
+          </label>
+          <label class="field">修订版 / 日期
+            <input id="sourceRevision" type="text" placeholder="不确定可留空，例如：2026-09-10 修订版">
+          </label>
+        </div>
+
+        <label class="file-drop" for="sourceFile">
+          <span class="file-icon" aria-hidden="true">↑</span>
+          <strong id="fileName">选择 PDF 或 TXT 文件</strong>
+          <small>支持可选中文本的 PDF；扫描版 PDF 暂不支持 OCR</small>
+          <input id="sourceFile" type="file" accept=".pdf,.txt,text/plain,application/pdf">
+        </label>
+
+        <div class="import-actions">
+          <span class="privacy-note">本地解析 · 不上传原始文件</span>
+          <button class="button button-primary" id="extractBtn" type="button" disabled>提取候选题目 <span class="button-arrow">→</span></button>
+        </div>
+      </section>
+
+      <section id="importStatus" class="import-status" aria-live="polite">
+        选择资料后开始解析。当前解析器优先识别官方命题文件中的“样题、正确答案、答案解析”结构。
+      </section>
+
+      <section class="candidate-section">
+        <div class="candidate-heading">
+          <div><p class="eyebrow">REVIEW BEFORE IMPORT</p><h2>候选题目</h2></div>
+          <span id="candidateCount" class="result-summary">尚未解析</span>
+        </div>
+        <div id="candidateResults" class="candidate-results">
+          <div class="empty-state">
+            <div class="empty-icon" aria-hidden="true">＋</div>
+            <strong>还没有候选题目</strong>
+            <p>解析后逐题核对题干、选项、答案、解析和原文页码。未核验的题目不会进入正式答题库。</p>
+          </div>
+        </div>
+        <div class="download-row">
+          <p>勾选“已核对原文”后，该题才会以 verified 状态导出。</p>
+          <button class="button button-primary" id="downloadBtn" type="button" disabled>下载题库 JSON</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer"><span>QuizMind AI</span><span>抽取只是候选生成，不等于答案已验证</span></footer>
+  </div>
+</body>
+</html>
