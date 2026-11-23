@@ -83,8 +83,11 @@ function validateDocument(document, index) {
   assertHttpsOrEmpty(document.sourceUrl, prefix + "来源链接");
   const seenPages = new Set();
   const pages = document.pages.map((page, pageIndex) => {
-    const number = Number(page && page.page) || (pageIndex + 1);
-    const text = String(page && page.text || "");
+    if (!page || typeof page !== "object" || Array.isArray(page)) {
+      throw new Error(prefix + "存在无效页面记录。");
+    }
+    const number = page.page == null ? pageIndex + 1 : Number(page.page);
+    const text = String(page.text || "");
     if (!Number.isInteger(number) || number < 1) throw new Error(prefix + "存在无效页码。");
     if (text.length > MAX_PAGE_TEXT_LENGTH) throw new Error(prefix + "单页文本超过长度限制。");
     if (seenPages.has(number)) throw new Error(prefix + "存在重复页码 " + number + "。");
