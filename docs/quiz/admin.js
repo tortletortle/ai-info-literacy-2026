@@ -469,6 +469,7 @@
         authority:$("sourceAuthority").value || "C",
         sourceUrl:$("sourceUrl").value.trim(),
         sourceConfirmedByUser:$("sourceConfirmed").checked === true,
+        originalFile:selectedFile ? selectedFile.name : "",
         revision:revision,
         pages:lastPages
       };
