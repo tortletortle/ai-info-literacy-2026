@@ -427,7 +427,8 @@
       var sourceId = $("sourceId").value.trim() || "SRC-UNKNOWN";
       var revision = $("sourceRevision").value.trim();
       var safeRevision = revision.replace(/[^A-Za-z0-9_-]/g,"").slice(0,24) || "latest";
-      var documentId = sourceId.replace(/[^A-Za-z0-9_-]/g,"").slice(0,32) + "-DOC-" + safeRevision;
+      var safeSourceId = sourceId.replace(/[^A-Za-z0-9_-]/g,"").slice(0,32) || "SRC";
+      var documentId = safeSourceId + "-DOC-" + safeRevision;
       var sourceDocument = {
         id:documentId,
         title:$("sourceTitle").value.trim() || "未命名资料",
