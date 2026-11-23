@@ -28,7 +28,8 @@
       "preload.cjs",
       "answer-engine.cjs",
       "package.json",
-      "workspace-schema.cjs"
+      "workspace-schema.cjs",
+      "retrieval-engine.cjs"
     ],
     "extraResources": [
       {
