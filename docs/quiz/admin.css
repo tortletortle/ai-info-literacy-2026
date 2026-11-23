@@ -52,3 +52,8 @@
   .import-actions .button, .download-row .button { width: 100%; }
   .candidate-card-head { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
+.download-actions { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 640px) {
+  .download-actions { width: 100%; flex-direction: column; }
+  .download-actions .button { width: 100%; }
+}
