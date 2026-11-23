@@ -84,9 +84,10 @@
           </div>
         </div>
         <div class="download-row">
-          <p>桌面版可直接保存资料与已核验题目；JSON 导出用于备份或迁移。第三方来源只能进入线索库，不能升级为标准答案。</p>
+          <p>桌面版可直接保存资料与已核验题目，也可备份整个工作区。导入备份时按 ID 合并，不会静默覆盖已有记录。</p>
           <div class="download-actions">
             <button class="button button-primary" id="saveLocalBtn" type="button" disabled>保存到本机工作区</button>
+            <button class="button button-quiet" id="backupWorkspaceBtn" type="button" disabled>备份整个工作区</button>
             <button class="button button-quiet" id="downloadKnowledgeBtn" type="button" disabled>导出全文知识库</button>
             <button class="button button-primary" id="downloadBtn" type="button" disabled>下载候选题库 JSON</button>
           </div>
