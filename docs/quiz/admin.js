@@ -307,6 +307,8 @@
       var meta = make("div","candidate-meta");
       meta.appendChild(make("span","","类型：" + question.type));
       meta.appendChild(make("span","","原文页码：" + (question.source.page || "未知")));
+      meta.appendChild(make("span","","来源等级：" + question.source.authority));
+      meta.appendChild(make("span","","来源元数据：" + (question.source.confirmedByUser ? "已确认" : "未确认")));
       meta.appendChild(make("span","","候选答案：" + (question.answer.length ? question.answer.join("、") : "未识别")));
       body.appendChild(meta);
 
