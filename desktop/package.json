@@ -1,6 +1,6 @@
 {
   "name": "quizmind-ai-desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "QuizMind AI Windows desktop answer and knowledge-base workspace",
   "private": true,
   "main": "main.cjs",
