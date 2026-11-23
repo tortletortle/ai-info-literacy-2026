@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-23",
+  "meta": {
+    "name": "QuizMind AI 本地题库",
+    "description": "只收录来源明确且经过审核的题目。"
+  },
+  "questions": []
+}
