@@ -370,6 +370,7 @@
 
     var source = makeElement("div", "source-line");
     source.appendChild(makeElement("span", "", "来源：" + q.source.title));
+    source.appendChild(makeElement("span", "", "来源等级：" + q.source.authority));
     if (q.module && q.module.name) source.appendChild(makeElement("span", "", "模块：" + q.module.name));
     if (q.source.page) source.appendChild(makeElement("span", "", "原文页码：" + q.source.page));
     if (q.source.updatedAt) source.appendChild(makeElement("span", "", "资料版本：" + q.source.updatedAt));
