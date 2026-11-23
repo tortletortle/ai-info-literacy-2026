@@ -1,13 +1,24 @@
 "use strict";
 
-const { app, BrowserWindow, ipcMain, shell, safeStorage } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, safeStorage, protocol, net } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { fileURLToPath } = require("node:url");
+const { pathToFileURL } = require("node:url");
 const { answerWithEvidence, testProvider, resolveEndpoint } = require("./answer-engine.cjs");
 
 const APP_ID = "com.quizmind.ai";
 let mainWindow = null;
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: "app",
+  privileges: {
+    standard: true,
+    secure: true,
+    supportFetchAPI: true,
+    corsEnabled: true,
+    stream: true
+  }
+}]);
 
 function getQuizDirectory() {
   return app.isPackaged
@@ -151,6 +162,27 @@ function registerIpcHandlers() {
   ipcMain.handle("app:openExternal", (_event, url) => openSafeExternal(url));
 }
 
+function registerAppProtocol() {
+  const quizDirectory = getQuizDirectory();
+  protocol.handle("app", (request) => {
+    try {
+      const targetUrl = new URL(request.url);
+      if (targetUrl.host !== "quizmind" || request.method !== "GET" && request.method !== "HEAD") {
+        return new Response("Not found", { status: 404 });
+      }
+      const requestedPath = decodeURIComponent(targetUrl.pathname === "/" ? "/index.html" : targetUrl.pathname);
+      const targetPath = path.resolve(quizDirectory, "." + requestedPath);
+      const relative = path.relative(quizDirectory, targetPath);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      return net.fetch(pathToFileURL(targetPath).toString());
+    } catch (_) {
+      return new Response("Not found", { status: 404 });
+    }
+  });
+}
+
 function createMainWindow() {
   const quizDirectory = getQuizDirectory();
   mainWindow = new BrowserWindow({
@@ -182,13 +214,7 @@ function createMainWindow() {
   mainWindow.webContents.on("will-navigate", (event, url) => {
     try {
       const target = new URL(url);
-      if (target.protocol !== "file:") {
-        event.preventDefault();
-        return;
-      }
-      const destination = fileURLToPath(target);
-      const relative = path.relative(quizDirectory, destination);
-      if (relative.startsWith("..") || path.isAbsolute(relative)) event.preventDefault();
+      if (target.protocol !== "app:" || target.host !== "quizmind") event.preventDefault();
     } catch (_) {
       event.preventDefault();
     }
@@ -197,7 +223,7 @@ function createMainWindow() {
   mainWindow.webContents.on("will-attach-webview", (event) => event.preventDefault());
   mainWindow.once("ready-to-show", () => mainWindow.show());
   mainWindow.on("closed", () => { mainWindow = null; });
-  mainWindow.loadFile(path.join(quizDirectory, "index.html"));
+  mainWindow.loadURL("app://quizmind/index.html");
 }
 
 const hasLock = app.requestSingleInstanceLock();
@@ -206,6 +232,7 @@ if (!hasLock) {
 } else {
   app.whenReady().then(() => {
     app.setAppUserModelId(APP_ID);
+    registerAppProtocol();
     registerIpcHandlers();
     createMainWindow();
     app.on("activate", () => {
