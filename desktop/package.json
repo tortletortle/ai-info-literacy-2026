@@ -27,7 +27,8 @@
       "main.cjs",
       "preload.cjs",
       "answer-engine.cjs",
-      "package.json"
+      "package.json",
+      "workspace-schema.cjs"
     ],
     "extraResources": [
       {
