@@ -116,6 +116,15 @@
     renderBankStatus();
   }
 
+  async function persistWorkspaceData() {
+    var payload = { questions:bank, documents:knowledgeDocs };
+    if (window.quizMindDesktop && window.quizMindDesktop.saveWorkspaceData) {
+      return window.quizMindDesktop.saveWorkspaceData(payload);
+    }
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));
+    return {ok:true};
+  }
+
   function setBank(questions) {
     bank = questions.map(validateQuestion);
     renderBankStatus();
@@ -123,26 +132,36 @@
 
   async function loadBank() {
     try {
-      var saved = localStorage.getItem(STORAGE_KEY);
+      var saved = null;
+      if (window.quizMindDesktop && window.quizMindDesktop.loadWorkspaceData) {
+        saved = await window.quizMindDesktop.loadWorkspaceData();
+      } else {
+        var savedText = localStorage.getItem(STORAGE_KEY);
+        if (savedText) saved = JSON.parse(savedText);
+      }
       if (saved) {
-        var parsedSaved = JSON.parse(saved);
-        if (Array.isArray(parsedSaved)) {
-          setBank(parsedSaved);
+        if (Array.isArray(saved)) {
+          setBank(saved);
           setKnowledgeDocs([]);
         } else {
-          setBank(parsedSaved.questions || []);
-          setKnowledgeDocs(parsedSaved.documents || [], parsedSaved.meta || {});
+          setBank(saved.questions || []);
+          setKnowledgeDocs(saved.documents || [], saved.meta || {});
         }
         return;
       }
     } catch (error) {
-      console.warn("本地题库读取失败，将尝试加载内置题库。", error);
+      console.warn("本地工作区读取失败，将尝试加载内置题库。", error);
     }
 
     try {
-      var response = await fetch("./data/questions.json", { cache: "no-store" });
-      if (!response.ok) throw new Error("题库文件读取失败");
-      var payload = await response.json();
+      var payload;
+      if (window.quizMindDesktop && window.quizMindDesktop.loadBuiltinQuestions) {
+        payload = await window.quizMindDesktop.loadBuiltinQuestions();
+      } else {
+        var response = await fetch("./data/questions.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("题库文件读取失败");
+        payload = await response.json();
+      }
       setBank(Array.isArray(payload) ? payload : payload.questions || []);
       if (!Array.isArray(payload)) setKnowledgeDocs(payload.documents || [], payload.meta || {});
     } catch (error) {
@@ -410,22 +429,28 @@
     });
 
     try {
-      var response = await fetch("/api/answer",{
-        method:"POST",
-        headers:{"content-type":"application/json"},
-        body:JSON.stringify({
-          question:parsed.stem,
-          type:parsed.type,
-          options:options,
-          evidence:evidencePayload
-        })
-      });
-      var data = await response.json();
-      if (!response.ok) {
-        var message = data.message || data.error || "答题服务暂不可用。";
-        if (response.status === 503 && data.error === "LLM_NOT_CONFIGURED") message = "服务端模型尚未配置。";
-        if (response.status === 404) message = "AI 答题 API 尚未部署。";
-        return {status:"unavailable",message:message};
+      var requestPayload = {
+        question:parsed.stem,
+        type:parsed.type,
+        options:options,
+        evidence:evidencePayload
+      };
+      var data;
+      if (window.quizMindDesktop && window.quizMindDesktop.answerQuestion) {
+        data = await window.quizMindDesktop.answerQuestion(requestPayload);
+      } else {
+        var response = await fetch("/api/answer",{
+          method:"POST",
+          headers:{"content-type":"application/json"},
+          body:JSON.stringify(requestPayload)
+        });
+        data = await response.json();
+        if (!response.ok) {
+          var message = data.message || data.error || "答题服务暂不可用。";
+          if (response.status === 503 && data.error === "LLM_NOT_CONFIGURED") message = "服务端模型尚未配置。";
+          if (response.status === 404) message = "AI 答题 API 尚未部署。";
+          return {status:"unavailable",message:message};
+        }
       }
       return {
         status:data.status === "answered" ? "answered" : "uncertain",
@@ -435,7 +460,7 @@
         message:data.explanation || "现有证据不足，系统拒绝输出答案。"
       };
     } catch (error) {
-      return {status:"unavailable",message:"AI 服务暂不可用；请检查 API 部署或网络连接。"};
+      return {status:"unavailable",message:error.message || "AI 服务暂不可用。"};
     }
   }
 
@@ -581,7 +606,7 @@
     var file = bankFile.files && bankFile.files[0];
     if (!file) return;
     var reader = new FileReader();
-    reader.onload = function () {
+    reader.onload = async function () {
       try {
         var payload = JSON.parse(String(reader.result || ""));
         var importedQuestions = Array.isArray(payload) ? payload : payload.questions;
@@ -591,7 +616,7 @@
         }
         if (Array.isArray(importedQuestions)) bank = importedQuestions.map(validateQuestion);
         if (importedDocuments) knowledgeDocs = validateKnowledgeDocs(importedDocuments,payload.meta || {});
-        localStorage.setItem(STORAGE_KEY,JSON.stringify({questions:bank,documents:knowledgeDocs}));
+        await persistWorkspaceData();
         renderBankStatus();
         resultSummary.textContent = "数据导入成功";
         results.replaceChildren();
