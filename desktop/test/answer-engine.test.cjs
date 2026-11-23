@@ -52,9 +52,9 @@ test("only accepts complete multi-select reasoning supported by official evidenc
     confidence: "high",
     evidenceIds: ["E1"],
     optionAnalysis: [
-      { key: "A", verdict: "supported", rationale: "资料明确列出 AND。" },
-      { key: "B", verdict: "supported", rationale: "资料明确列出 OR。" },
-      { key: "C", verdict: "refuted", rationale: "资料说明 Excel 是电子表格软件。" }
+      { key: "A", verdict: "supported", rationale: "资料明确列出 AND。", evidenceIds: ["E1"] },
+      { key: "B", verdict: "supported", rationale: "资料明确列出 OR。", evidenceIds: ["E1"] },
+      { key: "C", verdict: "refuted", rationale: "资料说明 Excel 是电子表格软件。", evidenceIds: ["E1"] }
     ],
     warnings: []
   };
@@ -88,8 +88,8 @@ test("rejects incomplete option analysis", async () => {
     confidence: "high",
     evidenceIds: ["E1"],
     optionAnalysis: [
-      { key: "A", verdict: "supported", rationale: "supported" },
-      { key: "B", verdict: "supported", rationale: "supported" }
+      { key: "A", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] },
+      { key: "B", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] }
     ],
     warnings: []
   };
@@ -109,9 +109,9 @@ test("rejects unsupported answer cardinality for multi-select", async () => {
     confidence: "high",
     evidenceIds: ["E1"],
     optionAnalysis: [
-      { key: "A", verdict: "supported", rationale: "supported" },
-      { key: "B", verdict: "refuted", rationale: "refuted" },
-      { key: "C", verdict: "refuted", rationale: "refuted" }
+      { key: "A", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] },
+      { key: "B", verdict: "refuted", rationale: "refuted", evidenceIds: ["E1"] },
+      { key: "C", verdict: "refuted", rationale: "refuted", evidenceIds: ["E1"] }
     ],
     warnings: []
   };
@@ -127,4 +127,99 @@ test("requires HTTPS for remote model endpoints", () => {
   assert.equal(resolveEndpoint("https://api.example.test/v1"), "https://api.example.test/v1/chat/completions");
   assert.equal(resolveEndpoint("http://127.0.0.1:11434/v1"), "http://127.0.0.1:11434/v1/chat/completions");
   assert.throws(() => resolveEndpoint("http://api.example.test/v1"), /HTTPS/);
+});
+
+test("rejects a result when one option has no direct evidence citation", async () => {
+  const content = {
+    status: "answered",
+    explanation: "Missing per-option citation.",
+    confidence: "high",
+    evidenceIds: ["E1"],
+    optionAnalysis: [
+      { key: "A", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] },
+      { key: "B", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] },
+      { key: "C", verdict: "refuted", rationale: "refuted", evidenceIds: [] }
+    ],
+    warnings: []
+  };
+  const result = await answerWithEvidence({
+    payload: answerPayload(),
+    settings,
+    fetchImpl: mockFetch(content)
+  });
+  assert.equal(result.status, "uncertain");
+  assert.deepEqual(result.answerKeys, []);
+});
+
+test("rejects citations that do not exist in the supplied evidence", async () => {
+  const content = {
+    status: "answered",
+    explanation: "Unknown evidence reference.",
+    confidence: "high",
+    evidenceIds: ["E1"],
+    optionAnalysis: [
+      { key: "A", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] },
+      { key: "B", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] },
+      { key: "C", verdict: "refuted", rationale: "refuted", evidenceIds: ["E404"] }
+    ],
+    warnings: []
+  };
+  const result = await answerWithEvidence({
+    payload: answerPayload(),
+    settings,
+    fetchImpl: mockFetch(content)
+  });
+  assert.equal(result.status, "uncertain");
+});
+
+test("defaults multi-select questions to at least two correct options", async () => {
+  const content = {
+    status: "answered",
+    explanation: "Only one answer was returned.",
+    confidence: "high",
+    evidenceIds: ["E1"],
+    optionAnalysis: [
+      { key: "A", verdict: "supported", rationale: "supported", evidenceIds: ["E1"] },
+      { key: "B", verdict: "refuted", rationale: "refuted", evidenceIds: ["E1"] },
+      { key: "C", verdict: "refuted", rationale: "refuted", evidenceIds: ["E1"] }
+    ],
+    warnings: []
+  };
+  const payload = answerPayload();
+  delete payload.multiAnswerMin;
+  delete payload.multiAnswerMax;
+  const result = await answerWithEvidence({
+    payload,
+    settings,
+    fetchImpl: mockFetch(content)
+  });
+  assert.equal(result.status, "uncertain");
+});
+
+test("rejects duplicate option keys before calling the model", async () => {
+  let called = false;
+  const payload = answerPayload({
+    options: [{key:"A",text:"AND"},{key:"A",text:"OR"}]
+  });
+  const result = await answerWithEvidence({
+    payload,
+    settings,
+    fetchImpl: async () => { called = true; throw new Error("unexpected"); }
+  });
+  assert.equal(result.status, "uncertain");
+  assert.equal(called, false);
+});
+
+test("redacts the API key from provider error details", async () => {
+  const result = await answerWithEvidence({
+    payload: answerPayload(),
+    settings,
+    fetchImpl: async () => ({
+      ok: false,
+      status: 401,
+      text: async () => "invalid credential test-key"
+    })
+  });
+  assert.equal(result.status, "uncertain");
+  assert.equal(result.explanation.includes("test-key"), false);
 });
