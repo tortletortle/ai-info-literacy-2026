@@ -18,7 +18,7 @@
   }
 
   function getPageNumber(line, currentPage) {
-    var match = line.match(/<<<PAGE\s*:\s*(\d+)>>>/);
+    var match = line.match(/<<<PAGE\s*:\s*(\d+)>>>/) || line.match(/^=+\s*PAGE\s+(\d+)\s*=+$/);
     return match ? Number(match[1]) : currentPage;
   }
 
@@ -35,53 +35,72 @@
 
   function parseBlock(block, index) {
     var lines = block.lines.map(cleanLine).filter(function (line) {
-      return line && !/^<<<PAGE\s*:/.test(line) && !/^\s*-\s*\d+\s*-\s*$/.test(line);
+      return line &&
+        !/^<<<PAGE\s*:/.test(line) &&
+        !/^=+\s*PAGE\s+\d+\s*=+$/.test(line) &&
+        !/^\s*-\s*\d+\s*-\s*$/.test(line);
     });
     var answerIndex = lines.findIndex(function (line) { return /^正确答案\s*[：:]/.test(line); });
     var explanationIndex = lines.findIndex(function (line) { return /^答案解析\s*[：:]/.test(line); });
     var contentEnd = answerIndex >= 0 ? answerIndex : (explanationIndex >= 0 ? explanationIndex : lines.length);
-    var optionStart = -1;
-    for (var i = 0; i < contentEnd; i++) {
-      if (optionLine(lines[i])) { optionStart = i; break; }
-    }
-
-    var stemLines = optionStart >= 0 ? lines.slice(0, optionStart) : lines.slice(0, contentEnd);
-    var stem = stemLines.join(" ").replace(/\s+/g, " ").trim();
+    var stemLines = [];
     var options = [];
     var currentOption = null;
-    var optionEnd = contentEnd;
-    if (optionStart >= 0) {
-      for (var j = optionStart; j < optionEnd; j++) {
-        var parsedOption = optionLine(lines[j]);
-        if (parsedOption) {
-          currentOption = { key:parsedOption[1].toUpperCase(), text:parsedOption[2].trim() };
-          options.push(currentOption);
-        } else if (currentOption) {
-          currentOption.text = (currentOption.text + " " + lines[j]).trim();
-        }
+    var inlineOptionPattern = /(?:^|\s)([A-H])\s*[、.．:：]\s*/g;
+
+    for (var i = 0; i < contentEnd; i++) {
+      var line = lines[i];
+      var matches = [];
+      var match;
+      inlineOptionPattern.lastIndex = 0;
+      while ((match = inlineOptionPattern.exec(line)) !== null) {
+        matches.push({key:match[1].toUpperCase(),start:match.index,end:inlineOptionPattern.lastIndex});
+      }
+
+      if (!matches.length) {
+        if (currentOption) currentOption.text = (currentOption.text + " " + line).trim();
+        else stemLines.push(line);
+        continue;
+      }
+
+      var prefix = line.slice(0,matches[0].start).trim();
+      if (prefix) {
+        if (currentOption) currentOption.text = (currentOption.text + " " + prefix).trim();
+        else stemLines.push(prefix);
+      }
+
+      for (var j = 0; j < matches.length; j++) {
+        var optionTextStart = matches[j].end;
+        var optionTextEnd = j + 1 < matches.length ? matches[j + 1].start : line.length;
+        var optionText = line.slice(optionTextStart,optionTextEnd).trim();
+        currentOption = {key:matches[j].key,text:optionText};
+        options.push(currentOption);
       }
     }
 
+    var stem = stemLines.join(" ").replace(/\s+/g," ").trim();
     var answerText = "";
-    if (answerIndex >= 0) answerText = lines[answerIndex].replace(/^正确答案\s*[：:]\s*/, "").trim();
+    if (answerIndex >= 0) answerText = lines[answerIndex].replace(/^正确答案\s*[：:]\s*/,"").trim();
     var type = block.type === "单选题" ? "single" : block.type === "多选题" ? "multi" : "judge";
     var answer = [];
     if (type === "judge") {
       if (!options.length) options = [{key:"A",text:"正确"},{key:"B",text:"错误"}];
-      var normalizedAnswer = answerText.replace(/\s/g, "");
+      var normalizedAnswer = answerText.replace(/\s/g,"");
       if (/错误|不正确|否|错/.test(normalizedAnswer)) answer = ["B"];
       else if (/正确|是|对/.test(normalizedAnswer)) answer = ["A"];
       else answer = (answerText.match(/[A-H]/gi) || []).map(function (key) { return key.toUpperCase(); });
     } else {
       answer = (answerText.match(/[A-H]/gi) || []).map(function (key) { return key.toUpperCase(); });
     }
-    answer = Array.from(new Set(answer)).filter(function (key) {
+    answer = Array.from(new Set(answer));
+    var answerKeysAvailable = answer.every(function (key) {
       return options.some(function (option) { return option.key === key; });
     });
+    if (!answerKeysAvailable) answer = [];
 
     var explanation = "";
     if (explanationIndex >= 0) {
-      explanation = lines.slice(explanationIndex).join("\n").replace(/^答案解析\s*[：:]\s*/, "").trim();
+      explanation = lines.slice(explanationIndex).join("\n").replace(/^答案解析\s*[：:]\s*/,"").trim();
     }
     if (!stem || stem.length < 8) return null;
 
@@ -100,6 +119,7 @@
       type:type,
       options:options,
       answer:answer,
+      extractedAnswerText:answerText,
       explanation:explanation,
       module:module ? {id:module.id,category:module.category,name:module.name} : {id:block.moduleId || 0,name:"待归类"},
       source:{
@@ -114,12 +134,11 @@
       canVerify:canVerify,
       extractionWarnings:[
         answer.length ? "" : "未识别到可用答案，需人工核对",
-        options.length ? "" : (type === "judge" ? "" : "未识别到选项，需人工核对"),
+        options.length >= 2 ? "" : "未识别到完整选项，需人工核对",
         block.moduleId ? "" : "未识别到知识模块编号"
       ].filter(Boolean)
     };
   }
-
   function parseDocumentText(text) {
     var lines = String(text || "").split(/\r?\n/);
     var active = null;
