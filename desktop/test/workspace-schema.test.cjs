@@ -13,7 +13,7 @@ function verifiedQuestion(overrides) {
     answer: ["A"],
     source: {
       id: "SRC-1", authority: "A", title: "官方资料",
-      url: "https://example.org/guide.pdf", page: 8,
+      url: "https://example.org/guide.pdf", confirmedByUser: true, page: 8,
       quote: "官方原文：AND 是布尔逻辑运算符，Excel 是电子表格软件。"
     },
     reviewStatus: "verified",
@@ -91,4 +91,14 @@ test("allows pending extraction candidates without a verified answer", () => {
     documents: []
   });
   assert.equal(result.questions[0].reviewStatus, "pending");
+});
+
+
+test("rejects verified questions when source metadata was not explicitly confirmed", () => {
+  assert.throws(() => normalizeWorkspace({
+    questions: [verifiedQuestion({
+      source: { ...verifiedQuestion().source, confirmedByUser: false }
+    })],
+    documents: []
+  }), /尚未由用户确认/);
 });
