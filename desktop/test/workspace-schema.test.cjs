@@ -27,6 +27,7 @@ test("accepts a structurally valid verified question and local knowledge pages",
     documents: [{
       id: "SRC-1-DOC-latest", title: "官方资料", sourceId: "SRC-1",
       authority: "A", sourceUrl: "https://example.org/guide.pdf",
+      sourceConfirmedByUser: true,
       pages: [{ page: 8, text: "官方原文内容。" }]
     }]
   });
@@ -101,4 +102,21 @@ test("rejects verified questions when source metadata was not explicitly confirm
     })],
     documents: []
   }), /尚未由用户确认/);
+});
+
+
+test("downgrades unconfirmed A/B documents to C-level evidence", () => {
+  const result = normalizeWorkspace({
+    questions: [],
+    documents: [{
+      id: "DOC-UNCONFIRMED",
+      title: "Unconfirmed document",
+      authority: "A",
+      sourceUrl: "https://example.org/source.pdf",
+      sourceConfirmedByUser: false,
+      pages: [{ page: 1, text: "unconfirmed source text" }]
+    }]
+  });
+  assert.equal(result.documents[0].declaredAuthority, "A");
+  assert.equal(result.documents[0].authority, "C");
 });
