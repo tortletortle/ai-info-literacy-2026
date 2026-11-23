@@ -69,6 +69,7 @@
         authority: ["A","B","C"].indexOf(q.source.authority) >= 0 ? q.source.authority : "C",
         title: String(q.source.title || "未注明来源"),
         url: String(q.source.url || ""),
+        confirmedByUser: q.source.confirmedByUser === true,
         updatedAt: String(q.source.updatedAt || ""),
         page: Number.isFinite(Number(q.source.page)) ? Number(q.source.page) : null,
         quote: String(q.source.quote || "")
@@ -627,17 +628,33 @@
         if (!Array.isArray(importedQuestions) && !importedDocuments) {
           throw new Error("JSON 顶层必须包含 questions 或 documents 数组");
         }
-        if (Array.isArray(importedQuestions)) bank = importedQuestions.map(validateQuestion);
-        if (importedDocuments) knowledgeDocs = validateKnowledgeDocs(importedDocuments,payload.meta || {});
+        var importedQuestionCount = 0;
+        var importedDocumentCount = 0;
+        if (Array.isArray(importedQuestions)) {
+          var questionMap = new Map(bank.map(function (question) { return [question.id,question]; }));
+          importedQuestions.map(validateQuestion).forEach(function (question) {
+            questionMap.set(question.id,question);
+            importedQuestionCount++;
+          });
+          bank = Array.from(questionMap.values());
+        }
+        if (importedDocuments) {
+          var documentMap = new Map(knowledgeDocs.map(function (document) { return [document.id,document]; }));
+          validateKnowledgeDocs(importedDocuments,payload.meta || {}).forEach(function (document) {
+            documentMap.set(document.id,document);
+            importedDocumentCount++;
+          });
+          knowledgeDocs = Array.from(documentMap.values());
+        }
         await persistWorkspaceData();
         renderBankStatus();
-        resultSummary.textContent = "数据导入成功";
+        resultSummary.textContent = "数据合并成功";
         results.replaceChildren();
         var message = makeElement("div", "empty-state");
-        message.appendChild(makeElement("strong", "", "数据导入成功"));
+        message.appendChild(makeElement("strong", "", "数据合并成功"));
         var verifiedCount = bank.filter(function (q) { return q.reviewStatus === "verified"; }).length;
         var pageCount = knowledgeDocs.reduce(function (total, doc) { return total + doc.pages.length; }, 0);
-        message.appendChild(makeElement("p", "", "当前浏览器已载入 " + verifiedCount + " 道已审核题目和 " + pageCount + " 页资料。未审核题目不会作为标准答案。"));
+        message.appendChild(makeElement("p", "", "本次合并题目 " + importedQuestionCount + " 道、资料 " + importedDocumentCount + " 份；当前共有 " + verifiedCount + " 道已审核题目和 " + pageCount + " 页资料。重复 ID 会更新对应记录，不会清空其他数据。"));
         results.appendChild(message);
       } catch (error) {
         window.alert("数据导入失败：" + error.message);
