@@ -52,6 +52,9 @@ function validateQuestion(question, index) {
     if (!["A", "B"].includes(source.authority)) {
       throw new Error(prefix + "不能将 C 级或未知来源标记为正式已核验题目。");
     }
+    if (source.confirmedByUser !== true) {
+      throw new Error(prefix + "尚未由用户确认文件与来源元数据一致。");
+    }
     if (!String(source.id || "").trim() || !String(source.title || "").trim() ||
         !Number.isInteger(Number(source.page)) || Number(source.page) < 1 ||
         String(source.quote || "").trim().length < 20) {
