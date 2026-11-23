@@ -73,8 +73,11 @@
           </div>
         </div>
         <div class="download-row">
-          <p>勾选“已核对原文”后，该题才会以 verified 状态导出。</p>
-          <button class="button button-primary" id="downloadBtn" type="button" disabled>下载题库 JSON</button>
+          <p>题库导出仅包含逐题核验后的答案；知识库导出保留原文页段，供后续检索增强生成使用。</p>
+          <div class="download-actions">
+            <button class="button button-quiet" id="downloadKnowledgeBtn" type="button" disabled>导出全文知识库</button>
+            <button class="button button-primary" id="downloadBtn" type="button" disabled>下载候选题库 JSON</button>
+          </div>
         </div>
       </section>
     </main>
