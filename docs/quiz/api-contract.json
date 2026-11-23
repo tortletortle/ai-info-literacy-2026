@@ -85,6 +85,15 @@
                         "text": {
                           "type": "string",
                           "maxLength": 5000
+                        },
+                        "authority": {
+                          "type": "string",
+                          "enum": [
+                            "A",
+                            "B",
+                            "C"
+                          ],
+                          "description": "来源等级；只有 A/B 来源可以支撑最终答案。"
                         }
                       }
                     }
