@@ -101,12 +101,23 @@
         sourceUrl:String(source.url || doc.sourceUrl || meta.sourceUrl || ""),
         sourceConfirmedByUser:sourceConfirmed,
         revision:String(source.updatedAt || doc.revision || meta.revision || ""),
-        pages:doc.pages.map(function (page, pageIndex) {
-          return {
-            page:Number(page.page) || (pageIndex + 1),
-            text:String(page.text || "")
-          };
-        }).filter(function (page) { return page.text.trim().length > 0; })
+        pages:(function () {
+          var seenPages = new Set();
+          return doc.pages.map(function (page, pageIndex) {
+            if (!page || typeof page !== "object" || Array.isArray(page)) {
+              throw new Error("第 " + (index + 1) + " 份资料存在无效页面记录");
+            }
+            var pageNumber = page.page == null ? pageIndex + 1 : Number(page.page);
+            if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+              throw new Error("第 " + (index + 1) + " 份资料存在无效页码");
+            }
+            if (seenPages.has(pageNumber)) {
+              throw new Error("第 " + (index + 1) + " 份资料存在重复页码 " + pageNumber);
+            }
+            seenPages.add(pageNumber);
+            return { page:pageNumber, text:String(page.text || "") };
+          }).filter(function (page) { return page.text.trim().length > 0; });
+        })()
       };
     });
   }
