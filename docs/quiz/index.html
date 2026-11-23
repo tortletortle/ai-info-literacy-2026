@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' app:; script-src 'self' app: https://cdn.jsdelivr.net; style-src 'self' app:; img-src 'self' app: data:; font-src 'self' data:; connect-src 'self' app: https: http://127.0.0.1:* http://localhost:*; worker-src 'self' app: blob: https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f5">
+  <meta name="description" content="面向 AI+信息素养竞赛的题库检索与智能答题工作台。">
+  <title>QuizMind AI · 智能答题台</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="QuizMind AI 首页">
+        <span class="brand-mark">Q</span>
+        <span class="brand-copy">
+          <strong>QuizMind <em>AI</em></strong>
+          <small>智能竞赛答题系统</small>
+        </span>
+      </a>
+      <div class="top-actions">
+        <span class="bank-status"><i class="status-dot"></i><span id="bankCount">正在读取题库</span></span>
+        <a class="button button-quiet" href="./admin.html">资料库</a>
+        <a class="button button-quiet" href="./settings.html">AI 设置</a>
+        <button class="button button-quiet" id="importBtn" type="button">导入数据</button>
+        <input id="bankFile" type="file" accept=".json,application/json" hidden>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p class="eyebrow">AI + INFORMATION LITERACY</p>
+        <h1>把题目贴进来，<br class="mobile-break">答案与依据一起给你。</h1>
+        <p class="intro-copy">Windows 桌面工作台 · 优先匹配本地审核题库；未命中时检索本地资料并进行证据约束推理。</p>
+      </section>
+
+      <section class="workspace" aria-labelledby="inputTitle">
+        <form id="answerForm">
+          <div class="editor-top">
+            <label id="inputTitle" for="questionInput">题目内容</label>
+            <span id="charCount">0 字</span>
+          </div>
+          <textarea id="questionInput" spellcheck="false" placeholder="在这里粘贴题干和选项……
+
+例如：
+下列哪些属于信息检索中的布尔逻辑运算符？
+A. AND
+B. OR
+C. NOT
+D. XOR
+
+支持一次粘贴多道题，题目之间用空行或 1.、2. 等编号分隔。" required></textarea>
+          <div class="editor-bottom">
+            <span class="input-hint">支持单选、多选、判断题 · 可一次输入多题</span>
+            <button class="button button-primary" id="answerBtn" type="submit">
+              <span>开始答题</span><span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="result-heading">
+          <div>
+            <p class="eyebrow">ANSWER RESULTS</p>
+            <h2>答题结果</h2>
+          </div>
+          <span id="resultSummary" class="result-summary">等待输入</span>
+        </div>
+
+        <section id="results" class="results" aria-live="polite">
+          <div class="empty-state">
+            <div class="empty-icon" aria-hidden="true">?</div>
+            <strong>等待你的第一道题</strong>
+            <p>粘贴题目后点击「开始答题」。命中题库时会显示答案、选项内容、解析和来源。</p>
+          </div>
+        </section>
+      </section>
+
+      <section class="version-note">
+        <span class="note-icon" aria-hidden="true">i</span>
+        <p><strong>桌面版 V0.1：</strong>题库和资料保存在本机；模型密钥通过系统安全存储加密。AI 推理只使用 A/B 级官方证据，证据不足时拒绝猜测。正式比赛使用前，必须核对该赛段是否允许 AI 辅助答题。</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>QuizMind AI</span>
+      <span><a href="./admin.html">资料整理</a> · <a href="./settings.html">AI 设置</a> · 本地优先 · 证据可追溯</span>
+    </footer>
+  </div>
+</body>
+</html>

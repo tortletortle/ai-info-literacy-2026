@@ -1,0 +1,209 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "QuizMind Answer API",
+    "version": "0.2.0",
+    "description": "只依据本地检索证据进行逐选项推理的答题接口。"
+  },
+  "paths": {
+    "/api/answer": {
+      "post": {
+        "summary": "根据导入资料中的证据判断一道客观题",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "question",
+                  "type",
+                  "options",
+                  "evidence"
+                ],
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 3000
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "single",
+                      "multi",
+                      "judge"
+                    ]
+                  },
+                  "options": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "key",
+                        "text"
+                      ],
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 1000
+                        }
+                      }
+                    }
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 6,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "text"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "sourceId": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 5000
+                        },
+                        "authority": {
+                          "type": "string",
+                          "enum": [
+                            "A",
+                            "B",
+                            "C"
+                          ],
+                          "description": "来源等级；只有 A/B 来源可以支撑最终答案。"
+                        }
+                      }
+                    }
+                  },
+                  "multiAnswerMin": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "多选题正确项最少数量；不传时默认为 1。"
+                  },
+                  "multiAnswerMax": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "多选题正确项最多数量；不传时默认为选项总数。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已回答或证据不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "answerKeys",
+                    "explanation",
+                    "confidence",
+                    "evidenceIds",
+                    "optionAnalysis",
+                    "warnings"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "answered",
+                        "uncertain"
+                      ]
+                    },
+                    "answerKeys": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "explanation": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "type": "string",
+                      "enum": [
+                        "high",
+                        "medium",
+                        "low"
+                      ]
+                    },
+                    "evidenceIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "optionAnalysis": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "verdict": {
+                            "type": "string",
+                            "enum": [
+                              "supported",
+                              "refuted",
+                              "insufficient"
+                            ]
+                          },
+                          "rationale": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式无效"
+          },
+          "502": {
+            "description": "模型供应商请求失败"
+          },
+          "503": {
+            "description": "服务端模型密钥或模型名称未配置"
+          }
+        }
+      }
+    }
+  }
+}

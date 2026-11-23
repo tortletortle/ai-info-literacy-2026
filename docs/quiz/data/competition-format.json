@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "sourceId": "SRC-003",
+  "scope": "高校通知所述校内选拔赛客观题结构；不得自动推广到省赛、联赛或其他赛道。",
+  "accessedAt": "2026-11-23",
+  "exam": {
+    "totalQuestions": 50,
+    "totalScore": 100,
+    "types": [
+      {
+        "type": "single",
+        "name": "单选题",
+        "count": 20,
+        "pointsEach": 2,
+        "options": 4,
+        "correctCount": 1,
+        "scoring": "exact-set"
+      },
+      {
+        "type": "multi",
+        "name": "多选题",
+        "count": 20,
+        "pointsEach": 2.5,
+        "options": 4,
+        "correctCountMin": 2,
+        "correctCountMax": 4,
+        "scoring": "exact-set"
+      },
+      {
+        "type": "judge",
+        "name": "判断题",
+        "count": 10,
+        "pointsEach": 1,
+        "options": 2,
+        "correctCount": 1,
+        "scoring": "exact-set"
+      }
+    ]
+  },
+  "engineImplications": [
+    "多选题必须比较完整正确选项集合，不能按命中一个正确选项就判对。",
+    "题库必须保存选项文本，不能只保存 A/B/C/D 字母。",
+    "判断题需要将“正确/错误”规范化，同时保留原始题面。",
+    "上述评分规则仅适用于来源通知明确描述的校内选拔赛。"
+  ]
+}

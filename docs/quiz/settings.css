@@ -1,0 +1,26 @@
+.settings-shell { max-width: 900px; }
+.settings-intro { padding: 48px 0 24px; }
+.settings-intro h1 { margin: 0; font-size: clamp(28px,4vw,38px); line-height: 1.25; letter-spacing: -1px; }
+.settings-intro > p:last-child { max-width: 700px; margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+.settings-panel { margin: 16px 0; padding: 23px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); box-shadow: var(--shadow); }
+.settings-section-title { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 20px; }
+.settings-section-title h2 { margin: 0; font-size: 18px; }
+.settings-section-title .eyebrow { margin: 0 0 3px; }
+.settings-status { color: var(--muted); font-size: 11px; }
+.settings-panel form { display: grid; gap: 16px; }
+.settings-panel .field { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 650; }
+.settings-panel .field input { width: 100%; min-height: 43px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--ink); background: #fcfdfb; font: inherit; font-size: 13px; }
+.settings-panel .field input:focus { outline: 2px solid rgba(35,107,80,.14); border-color: var(--green); }
+.settings-panel .field small { color: var(--subtle); font-size: 10px; font-weight: 400; }
+.clear-key { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+.settings-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.settings-message { min-height: 22px; margin: 14px 0 0; color: var(--muted); font-size: 12px; }
+.settings-message[data-state="success"] { color: var(--green); }
+.settings-message[data-state="error"] { color: var(--red); }
+.settings-message[data-state="info"] { color: var(--muted); }
+.local-panel ul { padding-left: 20px; color: var(--muted); font-size: 12px; }
+.local-panel li { margin: 7px 0; }
+.app-version { color: var(--subtle); font-size: 10px; }
+@media(max-width:620px){.settings-panel{padding:16px}.settings-section-title{align-items:flex-start;flex-direction:column}.settings-intro{padding-top:34px}}
+.back-link { color: var(--green); text-decoration: none; font-size: 12px; font-weight: 650; }
+.back-link:hover { text-decoration: underline; }

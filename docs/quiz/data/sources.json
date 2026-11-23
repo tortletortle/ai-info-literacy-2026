@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-23",
+  "authorityPolicy": {
+    "A": "赛事主办方/官方平台原始资料，可作为最终答案依据。",
+    "B": "高校图书馆等学校官方通知及其附件，可用于交叉核验和定位官方材料。",
+    "C": "第三方整理、转载、社区讨论，仅作为线索，不单独支撑标准答案。"
+  },
+  "sources": [
+    {
+      "id": "SRC-001",
+      "title": "2026 年大学生“AI+信息素养”大赛命题范围",
+      "publisher": "大学生“AI+信息素养”大赛官方平台",
+      "authority": "A",
+      "type": "dynamic-official-platform",
+      "url": "https://csc.xxsuyang.com/Knowledge",
+      "accessedAt": "2026-11-23",
+      "revision": "动态页面；静态抓取仅返回 JavaScript 加载提示，具体内容需在浏览器端核验。",
+      "use": "50 个知识模块、官方学习资源、样题与命题范围的首要核验入口。"
+    },
+    {
+      "id": "SRC-002",
+      "title": "关于启动 2026 年大学生“AI+信息素养”大赛的通知",
+      "publisher": "西南石油大学图书馆",
+      "authority": "B",
+      "type": "university-library-notice-with-official-document-attachment",
+      "url": "https://lib.swpu.edu.cn/1849.8080/noticex/20260901.html",
+      "publishedAt": "2026-08-31",
+      "accessedAt": "2026-11-23",
+      "attachment": "2026 年大学生“AI+信息素养”大赛客观题命题范围及备赛建议.pdf",
+      "use": "核验赛制时间与官方命题范围附件的公开入口；附件具体修订版本仍需读取 PDF 首页/元数据确认。"
+    },
+    {
+      "id": "SRC-003",
+      "title": "“智信杯”第五届辽宁省普通高校大学生信息素养大赛暨 2026 年全国大学生“AI+信息素养”大赛校内选拔赛正式启动",
+      "publisher": "沈阳工业大学图书馆",
+      "authority": "B",
+      "type": "university-library-notice",
+      "url": "https://library.sut.edu.cn/info/1312/5991.htm",
+      "publishedAt": "2026-09-15",
+      "accessedAt": "2026-11-23",
+      "use": "交叉核验 50 个知识模块、9 个类别、校内选拔赛题型与评分结构；附件正文仍需读取原件后才能将模块或样题标记为已核验。",
+      "attachment": "2026年大学生“AI+信息素养”大赛客观题命题范围及备赛建议（2026.7.17修订）",
+      "attachmentRevision": "2026-07-17",
+      "revision": "学校官方通知明确标注附件为 2026.7.17 修订版；尚未取得并逐页解析该 PDF 原件。"
+    },
+    {
+      "id": "SRC-004",
+      "title": "2026 年大学生“AI+信息素养”大赛命题范围文字转录",
+      "publisher": "第三方 GitHub 项目维护者",
+      "authority": "C",
+      "type": "third-party-transcription",
+      "url": "https://github.com/Ziv-ZHI/ai-infolit-competition/blob/main/_work/guide_full.txt",
+      "accessedAt": "2026-11-23",
+      "use": "仅用于定位官方文件章节、设计解析规则和交叉检查目录；不得单独作为最终答案依据。该仓库未声明可复用许可证，本项目不复制其题库数据或程序代码。",
+      "revisionClaim": "第三方备赛台声称使用 2026.9.10 修订版",
+      "verificationStatus": "unverified",
+      "accessNote": "当前可访问的官方高校通知附件仅明确标注 2026.7.17 修订版；9.10 修订版目前只在第三方整理页面出现，未取得官方原件，不得据此把模块或题目标记为官方已核验。"
+    },
+    {
+      "id": "SRC-005",
+      "title": "图书馆关于组织参加 2026 年大学生“AI+信息素养”大赛的通知",
+      "publisher": "河南中医药大学图书馆",
+      "authority": "B",
+      "type": "university-library-notice-with-attachment",
+      "url": "https://www.hactcm.edu.cn/info/1024/436724.htm",
+      "publishedAt": "2026-09-03",
+      "accessedAt": "2026-11-23",
+      "attachment": "2026 年大学生“AI+信息素养”大赛客观题命题范围及备赛建议.pdf",
+      "accessNote": "附件下载入口需要验证码；当前只核验通知正文与附件名称，未将附件内容当作已读取。",
+      "use": "独立高校图书馆通知，用于交叉核验赛事组织、命题范围入口及官方附件位置。"
+    }
+  ]
+}

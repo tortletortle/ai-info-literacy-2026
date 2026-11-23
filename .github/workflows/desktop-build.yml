@@ -1,0 +1,48 @@
+name: QuizMind Windows Desktop Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "desktop/**"
+      - "docs/quiz/**"
+      - ".github/workflows/desktop-build.yml"
+  push:
+    branches:
+      - desktop-app-v0.1
+    paths:
+      - "desktop/**"
+      - "docs/quiz/**"
+      - ".github/workflows/desktop-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install desktop dependencies
+        run: npm install
+        working-directory: desktop
+      - name: Run answer engine tests
+        run: npm test
+        working-directory: desktop
+      - name: Build Windows installer and portable app
+        run: npm run dist:win
+        working-directory: desktop
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuizMind-AI-Windows
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,59 @@
+{
+  "name": "quizmind-ai-desktop",
+  "version": "0.2.0",
+  "description": "QuizMind AI Windows desktop answer and knowledge-base workspace",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "prepare:assets": "node scripts/prepare-assets.cjs",
+    "start": "npm run prepare:assets && electron .",
+    "dev": "npm run start",
+    "test": "node --test",
+    "dist:win": "npm run prepare:assets && electron-builder --win nsis portable",
+    "dist:dir": "npm run prepare:assets && electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "45.4.1",
+    "electron-builder": "26.18.1",
+    "pdfjs-dist": "6.5.438"
+  },
+  "build": {
+    "appId": "com.quizmind.ai",
+    "productName": "QuizMind AI",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "answer-engine.cjs",
+      "package.json",
+      "workspace-schema.cjs",
+      "retrieval-engine.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "../docs/quiz",
+        "to": "quiz",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "QuizMind AI"
+    }
+  }
+}
