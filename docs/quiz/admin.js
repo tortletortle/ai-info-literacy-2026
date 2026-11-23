@@ -267,6 +267,15 @@
     backupWorkspaceBtn.disabled = !(window.quizMindDesktop && window.quizMindDesktop.loadWorkspaceData);
   }
 
+  function invalidateExtraction(message) {
+    if (!lastPages.length && !candidates.length) return;
+    lastPages = [];
+    lastExtractedText = "";
+    candidates = [];
+    renderCandidates();
+    setStatus(message,"error");
+  }
+
   function renderCandidates() {
     candidateResults.replaceChildren();
     if (!candidates.length) {
@@ -336,8 +345,26 @@
 
   sourceFile.addEventListener("change",function () {
     selectedFile = sourceFile.files && sourceFile.files[0] ? sourceFile.files[0] : null;
+    $("sourceConfirmed").checked = false;
     fileName.textContent = selectedFile ? selectedFile.name : "选择 PDF 或 TXT 文件";
     extractBtn.disabled = !selectedFile;
+    invalidateExtraction("文件已更换：上次抽取结果已清空。请核对新文件的来源信息、重新确认后再提取。");
+  });
+
+  ["sourceTitle","sourceUrl","sourceId","sourceRevision","sourceAuthority"].forEach(function (id) {
+    var field = $(id);
+    var eventName = field.tagName === "SELECT" ? "change" : "input";
+    field.addEventListener(eventName,function () {
+      $("sourceConfirmed").checked = false;
+      invalidateExtraction("来源元数据已修改：上次抽取结果已清空。请重新核对来源、勾选确认并重新提取。");
+    });
+  });
+
+  $("sourceConfirmed").addEventListener("change",function () {
+    if (lastPages.length || candidates.length) {
+      $("sourceConfirmed").checked = false;
+      invalidateExtraction("来源确认状态已改变：为避免沿用旧审核结果，请重新勾选确认并重新提取文件。");
+    }
   });
 
   extractBtn.addEventListener("click",async function () {
