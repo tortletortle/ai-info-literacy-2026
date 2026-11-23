@@ -6,6 +6,16 @@
   var modules = [];
   var lastExtractedText = "";
   var lastPages = [];
+  var pdfjsReady = (async function () {
+    if (window.quizMindDesktop) {
+      var localPdfjs = await import("./vendor/pdf.mjs");
+      localPdfjs.GlobalWorkerOptions.workerSrc = "./vendor/pdf.worker.mjs";
+      return localPdfjs;
+    }
+    var remotePdfjs = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/legacy/build/pdf.mjs");
+    remotePdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/legacy/build/pdf.worker.mjs";
+    return remotePdfjs;
+  })();
 
   var sourceFile = $("sourceFile");
   var fileName = $("fileName");
@@ -195,11 +205,17 @@
   }
 
   async function extractPdf(file) {
-    if (!window.pdfjsLib) throw new Error("PDF 解析组件未加载，请检查网络后刷新页面。");
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    var pdfjsLib;
+    try {
+      pdfjsLib = await pdfjsReady;
+    } catch (error) {
+      throw new Error("PDF 解析组件加载失败：" + error.message);
+    }
     var buffer = await file.arrayBuffer();
-    var pdf = await window.pdfjsLib.getDocument({data:buffer}).promise;
+    var pdf = await pdfjsLib.getDocument({
+      data:buffer,
+      disableWorker:!!window.quizMindDesktop
+    }).promise;
     var pages = [];
     for (var pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
       var page = await pdf.getPage(pageNo);
@@ -382,10 +398,13 @@
     downloadJson(payload,"quizmind-knowledge-documents.json");
   });
 
-  var modulesReady = fetch("./data/modules.json").then(function (response) {
-    if (!response.ok) throw new Error("模块目录加载失败");
-    return response.json();
-  }).then(function (payload) {
+  var modulesSource = window.quizMindDesktop && window.quizMindDesktop.loadModules
+    ? window.quizMindDesktop.loadModules()
+    : fetch("./data/modules.json").then(function (response) {
+        if (!response.ok) throw new Error("模块目录加载失败");
+        return response.json();
+      });
+  var modulesReady = Promise.resolve(modulesSource).then(function (payload) {
     modules = payload.modules || [];
   }).catch(function (error) {
     console.warn(error);
