@@ -50,6 +50,19 @@
       "url": "https://github.com/Ziv-ZHI/ai-infolit-competition/blob/main/_work/guide_full.txt",
       "accessedAt": "2026-11-23",
       "use": "仅用于定位官方文件章节、设计解析规则和交叉检查目录；不得单独作为最终答案依据。该仓库未声明可复用许可证，本项目不复制其题库数据或程序代码。"
+    },
+    {
+      "id": "SRC-005",
+      "title": "图书馆关于组织参加 2026 年大学生“AI+信息素养”大赛的通知",
+      "publisher": "河南中医药大学图书馆",
+      "authority": "B",
+      "type": "university-library-notice-with-attachment",
+      "url": "https://www.hactcm.edu.cn/info/1024/436724.htm",
+      "publishedAt": "2026-09-03",
+      "accessedAt": "2026-11-23",
+      "attachment": "2026 年大学生“AI+信息素养”大赛客观题命题范围及备赛建议.pdf",
+      "accessNote": "附件下载入口需要验证码；当前只核验通知正文与附件名称，未将附件内容当作已读取。",
+      "use": "独立高校图书馆通知，用于交叉核验赛事组织、命题范围入口及官方附件位置。"
     }
   ]
 }
