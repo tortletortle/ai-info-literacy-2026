@@ -212,10 +212,7 @@
       throw new Error("PDF 解析组件加载失败：" + error.message);
     }
     var buffer = await file.arrayBuffer();
-    var pdf = await pdfjsLib.getDocument({
-      data:buffer,
-      disableWorker:!!window.quizMindDesktop
-    }).promise;
+    var pdf = await pdfjsLib.getDocument({data:buffer}).promise;
     var pages = [];
     for (var pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
       var page = await pdf.getPage(pageNo);
