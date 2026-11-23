@@ -74,7 +74,9 @@ function validateDocument(document, index) {
   if (!Array.isArray(document.pages) || document.pages.length > MAX_PAGES_PER_DOCUMENT) {
     throw new Error(prefix + "页数组无效或超过数量限制。");
   }
-  const declaredAuthority = ["A", "B", "C"].includes(document.authority) ? document.authority : "C";
+  const declaredAuthority = ["A", "B", "C"].includes(document.declaredAuthority)
+    ? document.declaredAuthority
+    : ["A", "B", "C"].includes(document.authority) ? document.authority : "C";
   const sourceConfirmedByUser = document.sourceConfirmedByUser === true ||
     Boolean(document.source && document.source.confirmedByUser === true);
   const authority = sourceConfirmedByUser ? declaredAuthority : "C";
