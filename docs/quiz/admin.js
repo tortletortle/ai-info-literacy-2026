@@ -391,6 +391,7 @@
 
   window.QuizMindImporter = {
     parseDocumentText:parseDocumentText,
+    splitPages:splitPages,
     modulesReady:modulesReady
   };
 })();
