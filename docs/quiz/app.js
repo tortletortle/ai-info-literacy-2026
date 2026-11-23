@@ -182,7 +182,8 @@
     var stem = raw.replace(optionPattern, "").replace(/^\s*(?:第\s*)?\d{1,3}\s*[、.．)）]\s*/, "").trim();
     stem = stem.replace(/\n+/g, " ").replace(/\s+/g, " ");
     var type = "single";
-    if (/判断题|判断下列|正确或错误|对错判断/.test(stem)) type = "judge";
+    if (/判断题|判断下列|正确或错误|对错判断/.test(stem) ||
+        (!options.length && /[（(]\s*[√×对错]?\s*[）)]\s*$/.test(stem))) type = "judge";
     else if (/多选|多项选择|哪些|哪几项|所有正确/.test(stem)) type = "multi";
     return { raw: raw, stem: stem, options: options, type: type };
   }
@@ -289,7 +290,7 @@
     return unique.slice(0,3);
   }
 
-  function renderMiss(parsed, index, reason, evidence) {
+  function renderMiss(parsed, index, reason, evidence, apiMessage) {
     evidence = evidence || [];
     var card = makeElement("article", "result-card");
     var head = makeElement("div", "result-card-head");
@@ -300,11 +301,11 @@
     body.appendChild(makeElement("p", "result-question", parsed.raw));
     var box = makeElement("div", "miss-box");
     if (evidence.length) {
-      box.appendChild(makeElement("strong", "", "原题未命中，但资料库找到相关片段。"));
-      box.appendChild(makeElement("p", "", "以下内容是检索线索，不是自动判定的标准答案；当前版本尚未连接 AI 推理服务，请按原文核对各个选项。"));
+      box.appendChild(makeElement("strong", "", apiMessage ? "资料库找到相关片段，但 AI 推理未能完成。" : "原题未命中，资料库找到相关片段。"));
+      box.appendChild(makeElement("p", "", apiMessage || "以下是检索线索；系统尚未完成逐项证据核验，因此不会把片段直接当作答案。"));
     } else {
-      box.appendChild(makeElement("strong", "", reason || "当前审核题库中没有足够可靠的匹配结果。"));
-      box.appendChild(makeElement("p", "", "本版本尚未连接 AI 知识检索服务，因此不会猜测答案。请核对题干，或导入经过审核的题库与资料库。"));
+      box.appendChild(makeElement("strong", "", reason || "当前审核题库和本地资料库都没有找到足够可靠的依据。"));
+      box.appendChild(makeElement("p", "", apiMessage || "系统没有可核验的资料证据，因此不会猜测答案。请导入官方资料或经过审核的题库。"));
     }
     body.appendChild(box);
 
@@ -388,40 +389,166 @@
     return card;
   }
 
-  function answerQuestions(raw) {
+  async function callAnswerAPI(parsed, evidence) {
+    var options = parsed.options.length ? parsed.options :
+      (parsed.type === "judge" ? [{key:"A",text:"正确"},{key:"B",text:"错误"}] : []);
+    if (!options.length) return {status:"unavailable",message:"没有识别到选项，无法逐项核验。"};
+
+    var evidencePayload = evidence.map(function (item,index) {
+      return {
+        id:"E" + (index + 1),
+        title:item.doc.title,
+        url:item.doc.sourceUrl,
+        page:item.page,
+        sourceId:item.doc.sourceId,
+        text:item.text
+      };
+    });
+
+    try {
+      var response = await fetch("/api/answer",{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({
+          question:parsed.stem,
+          type:parsed.type,
+          options:options,
+          evidence:evidencePayload
+        })
+      });
+      var data = await response.json();
+      if (!response.ok) {
+        var message = data.message || data.error || "答题服务暂不可用。";
+        if (response.status === 503 && data.error === "LLM_NOT_CONFIGURED") message = "服务端模型尚未配置。";
+        if (response.status === 404) message = "AI 答题 API 尚未部署。";
+        return {status:"unavailable",message:message};
+      }
+      return {
+        status:data.status === "answered" ? "answered" : "uncertain",
+        data:data,
+        options:options,
+        evidencePayload:evidencePayload,
+        message:data.explanation || "现有证据不足，系统拒绝输出答案。"
+      };
+    } catch (error) {
+      return {status:"unavailable",message:"AI 服务暂不可用；请检查 API 部署或网络连接。"};
+    }
+  }
+
+  function renderAIResult(parsed,index,ai,evidence) {
+    var data = ai.data;
+    var options = ai.options;
+    var answerKeys = Array.isArray(data.answerKeys) ? data.answerKeys : [];
+    var selected = options.filter(function (option) { return answerKeys.indexOf(option.key) >= 0; });
+    if (!selected.length) return renderMiss(parsed,index,"AI 推理结果未通过答案映射校验。",evidence,"服务端未返回可映射的答案选项。");
+
+    var card = makeElement("article","result-card");
+    var head = makeElement("div","result-card-head");
+    head.appendChild(makeElement("strong","","第 " + (index + 1) + " 题 · AI 证据推理"));
+    head.appendChild(makeElement("span","status-pill status-hit","证据校验通过 · 模型自评 " + (data.confidence || "low")));
+    card.appendChild(head);
+
+    var body = makeElement("div","result-body");
+    body.appendChild(makeElement("p","result-question",parsed.raw));
+    body.appendChild(makeElement("div","answer-label","基于导入资料的推理答案"));
+    var answerLines = makeElement("div","answer-lines");
+    selected.forEach(function (option) {
+      var line = makeElement("div","answer-item");
+      line.appendChild(makeElement("b","",option.key + "."));
+      line.appendChild(document.createTextNode(option.text));
+      answerLines.appendChild(line);
+    });
+    body.appendChild(answerLines);
+
+    if (data.explanation) {
+      var explanation = makeElement("div","explanation");
+      explanation.appendChild(makeElement("strong","","解析"));
+      explanation.appendChild(makeElement("p","",data.explanation));
+      body.appendChild(explanation);
+    }
+
+    if (Array.isArray(data.optionAnalysis) && data.optionAnalysis.length) {
+      var analysisDetails = makeElement("details","evidence-details");
+      analysisDetails.appendChild(makeElement("summary","","展开逐项判断"));
+      data.optionAnalysis.forEach(function (item) {
+        var verdict = item.verdict === "supported" ? "支持" : item.verdict === "refuted" ? "排除" : "证据不足";
+        analysisDetails.appendChild(makeElement("p","",item.key + " · " + verdict + "：" + item.rationale));
+      });
+      body.appendChild(analysisDetails);
+    }
+
+    var evidenceMap = new Map(ai.evidencePayload.map(function (item) { return [item.id,item]; }));
+    (data.evidenceIds || []).forEach(function (id) {
+      var item = evidenceMap.get(id);
+      if (!item) return;
+      var details = makeElement("details","evidence-details");
+      details.appendChild(makeElement("summary","",item.title + " · 第 " + item.page + " 页"));
+      details.appendChild(makeElement("p","",item.text));
+      if (item.url && /^https:\/\/[^ ]+$/i.test(item.url)) {
+        var link = makeElement("a","","打开来源网页");
+        link.href = item.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        details.appendChild(link);
+      }
+      body.appendChild(details);
+    });
+
+    if (Array.isArray(data.warnings) && data.warnings.length) {
+      body.appendChild(makeElement("div","miss-box","提示：" + data.warnings.join("；")));
+    }
+    card.appendChild(body);
+    return card;
+  }
+
+  async function answerQuestions(raw) {
     var blocks = splitQuestions(raw);
     results.replaceChildren();
-    var hitCount = 0;
+    var bankHitCount = 0;
+    var aiAnswerCount = 0;
     var missCount = 0;
 
-    blocks.forEach(function (block, index) {
-      var parsed = parseQuestion(block);
+    for (var index = 0; index < blocks.length; index++) {
+      var parsed = parseQuestion(blocks[index]);
       if (!parsed.stem) {
         missCount++;
-        results.appendChild(renderMiss(parsed, index, "未能识别题干，请检查粘贴内容。", []));
-        return;
+        results.appendChild(renderMiss(parsed,index,"未能识别题干，请检查粘贴内容。",[]));
+        continue;
       }
+
       var ranked = rankMatches(parsed);
       var best = ranked[0];
       var second = ranked[1];
       var threshold = parsed.options.length ? 0.68 : 0.76;
-      if (!best || best.score < threshold) {
-        missCount++;
-        results.appendChild(renderMiss(parsed, index, null, retrieveEvidence(parsed)));
-        return;
+      var ambiguous = !!(best && second && second.score >= threshold &&
+        best.score - second.score < 0.045 && !best.exact);
+
+      if (best && best.score >= threshold && !ambiguous) {
+        bankHitCount++;
+        results.appendChild(renderHit(best,parsed,index,false));
+        continue;
       }
-      var ambiguous = !!(second && second.score >= threshold && best.score - second.score < 0.045 && !best.exact);
-      if (ambiguous) {
+
+      var evidence = retrieveEvidence(parsed);
+      if (!evidence.length) {
         missCount++;
+        results.appendChild(renderMiss(parsed,index,ambiguous ? "发现多个相近题目，无法唯一匹配。" : null,[]));
+        continue;
+      }
+
+      var ai = await callAnswerAPI(parsed,evidence);
+      if (ai.status === "answered") {
+        aiAnswerCount++;
+        results.appendChild(renderAIResult(parsed,index,ai,evidence));
       } else {
-        hitCount++;
+        missCount++;
+        results.appendChild(renderMiss(parsed,index,null,evidence,ai.message));
       }
-      results.appendChild(renderHit(best, parsed, index, ambiguous));
-    });
+    }
 
-    resultSummary.textContent = blocks.length + " 道题 · 命中 " + hitCount + " · 待核对 " + missCount;
+    resultSummary.textContent = blocks.length + " 道题 · 题库命中 " + bankHitCount +
+      " · AI证据推理 " + aiAnswerCount + " · 待核对 " + missCount;
   }
-
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     var raw = input.value.trim();
@@ -431,9 +558,9 @@
     }
     answerBtn.disabled = true;
     answerBtn.querySelector("span").textContent = "检索中…";
-    window.setTimeout(function () {
+    window.setTimeout(async function () {
       try {
-        answerQuestions(raw);
+        await answerQuestions(raw);
       } finally {
         answerBtn.disabled = false;
         answerBtn.querySelector("span").textContent = "开始答题";
