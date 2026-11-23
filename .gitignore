@@ -12,3 +12,7 @@ Thumbs.db
 # 本地临时文件
 *.tmp
 ~$*
+# QuizMind desktop build outputs
+desktop/node_modules/
+desktop/dist/
+docs/quiz/vendor/
