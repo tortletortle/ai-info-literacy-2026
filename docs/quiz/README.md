@@ -21,7 +21,7 @@
 已建立资料索引：
 
 - `data/modules.json`：官方命题范围的 9 大类、50 个知识模块目录。
-- `data/sources.json`：官方平台与高校图书馆公开通知的来源登记、权威等级和证据使用规则。
+- `data/sources.json`：官方平台与高校图书馆公开通知的来源登记、权威等级和证据使用规则（含附件访问限制记录）。
 - `data/competition-format.json`：由高校图书馆官方通知交叉核验的校内选拔赛题型与分值结构（不外推到其他赛段）。
 - `api-contract.json`：后续服务端答题 API 的请求/响应契约。
 - `ARCHITECTURE.md`：证据优先答题流程、来源等级、多选题判定与验收指标。
